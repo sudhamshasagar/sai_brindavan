@@ -63,7 +63,7 @@ const Home = () => {
 
             {/* Main Doctor Image */}
             <img
-              src="hero_img.png"
+              src={process.env.PUBLIC_URL + "/hero_img.png"}
               alt="Medical Professionals"
               className="object-contain object-bottom w-full max-h-[75vh] lg:max-h-[85vh] drop-shadow-2xl relative z-10"
             />
