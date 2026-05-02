@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/sai_brindavan/static/css/main.d37faadb.css",
+    "main.js": "/sai_brindavan/static/js/main.7e89620b.js",
+    "index.html": "/sai_brindavan/index.html",
+    "main.d37faadb.css.map": "/sai_brindavan/static/css/main.d37faadb.css.map",
+    "main.7e89620b.js.map": "/sai_brindavan/static/js/main.7e89620b.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.d37faadb.css",
+    "static/js/main.7e89620b.js"
+  ]
+}
