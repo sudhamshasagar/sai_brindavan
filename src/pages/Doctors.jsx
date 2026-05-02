@@ -13,7 +13,7 @@ const doctorsData = [
       'MD in Pediatrics - XYZ Medical College',
       'MBBS - Rajiv Gandhi University of Health Sciences'
     ],
-    image: '/doctor1.jpeg', 
+    image: 'doctor1.jpeg', 
     socials: { twitter: '#', linkedin: '#', mail: 'mailto:naveen@saibrindavan.com' }
   },
   {
@@ -27,7 +27,7 @@ const doctorsData = [
       'DLO (Diploma in Otorhinolaryngology)',
       'MBBS - State Medical University'
     ],
-    image: '/doctor2.jpeg',
+    image: 'doctor2.jpeg',
     socials: { twitter: '#', linkedin: '#', mail: 'mailto:dhanalaxmi@saibrindavan.com' }
   },
   {
@@ -41,7 +41,7 @@ const doctorsData = [
       'Diploma in Family Medicine',
       'MBBS - National Medical College'
     ],
-    image: '/doctor3.jpeg',
+    image: 'doctor3.jpeg',
     socials: { twitter: '#', linkedin: '#', mail: 'mailto:samiulla@saibrindavan.com' }
   },
   {
@@ -55,7 +55,7 @@ const doctorsData = [
       'DCH (Diploma in Child Health)',
       'MBBS - Medical College of Sciences'
     ],
-    image: '/doctor4.jpeg',
+    image: 'doctor4.jpeg',
     socials: { twitter: '#', linkedin: '#', mail: 'mailto:asifa@saibrindavan.com' }
   },
   {
@@ -69,7 +69,7 @@ const doctorsData = [
       'MD in Pediatrics - City Medical Institute',
       'MBBS - University of Health Sciences'
     ],
-    image: '/doctor5.jpg',
+    image: 'doctor5.jpg',
     socials: { twitter: '#', linkedin: '#', mail: 'mailto:chandan@saibrindavan.com' }
   }
 ];
