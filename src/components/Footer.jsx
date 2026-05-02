@@ -23,7 +23,7 @@ const Footer = () => {
         
         {/* Overlapping Shield Badge */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[65%] z-20 flex flex-col items-center justify-center w-32 h-36 md:w-36 md:h-40 bg-white rounded-b-[2.5rem] rounded-t-2xl shadow-2xl border-[6px] border-white">
-          <img src="/logo.jpg" className="w-10 h-10 md:w-10 md:h-10 text-[#f6ac42] mb-1.5" />
+          <img src="logo.jpg" className="w-10 h-10 md:w-10 md:h-10 text-[#f6ac42] mb-1.5" />
           <span className="text-stone-900 font-black text-xs md:text-sm tracking-wider uppercase text-center leading-tight">
             Sai<br/>Brindavan
           </span>

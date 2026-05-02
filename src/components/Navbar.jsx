@@ -68,7 +68,7 @@ const Navbar = () => {
           {/* Logo Area */}
           <a href="#" className="flex items-center gap-2.5 cursor-pointer group shrink-0">
             <div className="w-10 h-10 bg-[#1f9b90]/10 rounded-xl flex items-center justify-center group-hover:bg-[#1f9b90] transition-colors duration-300">
-              <img src="/logo.jpg" className="w-6 h-6 text-[#1f9b90] group-hover:text-white transition-colors duration-300" strokeWidth={2.5} />
+              <img src="logo.jpg" className="w-6 h-6 text-[#1f9b90] group-hover:text-white transition-colors duration-300" strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
               <span className="text-xl md:text-2xl font-black text-[#2b4c7e] tracking-tight leading-none uppercase">
