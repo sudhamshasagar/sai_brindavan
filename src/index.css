@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Scrollbar Styles */
+
+/* For WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px; /* Very thin */
+  height: 6px; /* For horizontal scrollbars */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* Invisible track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1); /* Very light color, almost invisible */
+  border-radius: 10px; /* Rounded corners */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2); /* Slightly darker on hover for usability */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin; /* Use thin scrollbar */
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent; /* Thumb color and track color */
+}
