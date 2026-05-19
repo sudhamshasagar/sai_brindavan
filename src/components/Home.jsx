@@ -1,111 +1,147 @@
 import React from 'react';
 import Navbar from './Navbar';
-import { Play, Calendar, HeartPulse, CheckCircle2, Award } from 'lucide-react';
+import { 
+  Calendar, PhoneCall, AlertTriangle, 
+  HeartPulse, Activity, ArrowRight, ShieldPlus,
+  Stethoscope, Droplets, Apple
+} from 'lucide-react';
 
 const Home = () => {
   return (
-    // Changed to min-h-screen on mobile, h-screen on lg to handle mobile scrolling better
-    <div className="min-h-screen lg:h-screen bg-gradient-to-br from-[#faf8f1] to-[#e0f1ef] font-sans overflow-hidden relative flex flex-col">
-      
-      {/* Subtle Background Pattern */}
-      <div className="absolute inset-0 z-0 opacity-[0.02] bg-[url('https://cdn.icon-icons.com/icons2/2367/PNG/512/medical_report_icon_143719.png')] bg-repeat pointer-events-none"></div>
+    <div className="min-h-screen bg-white font-sans relative flex flex-col selection:bg-[#1f9b90] selection:text-white overflow-hidden">
       
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-6 w-full flex-1 flex flex-col lg:flex-row items-center relative z-10 pt-10 lg:pt-0">
+      {/* ================= AUTO-SCROLLING HEALTH ADVICE BANNER ================= */}
+      {/* This creates the "Media / News Ticker" effect across the screen */}
+      <div className="w-full bg-gradient-to-r from-[#2b4c7e] via-[#1a365d] to-[#2b4c7e] text-white py-3 flex overflow-hidden relative shadow-md z-20 border-b-4 border-[#1f9b90]">
         
-        {/* ================= LEFT COLUMN: TEXT CONTENT ================= */}
-        <div className="w-full lg:w-1/2 space-y-6 md:space-y-8 text-center lg:text-left relative z-20 pb-16 lg:pb-0">
-          
-          {/* Top Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#1f9b90]/10 border border-[#1f9b90]/20 rounded-full text-[#1f9b90] font-bold text-xs uppercase tracking-widest mx-auto lg:mx-0">
-            <HeartPulse className="w-4 h-4" />
-            Trusted Healthcare
-          </div>
+        {/* Absolute "Live Updates" Badge so it stays fixed on the left */}
+        <div className="absolute left-0 top-0 h-full bg-red-600 px-4 md:px-6 flex items-center gap-2 z-10 font-bold uppercase tracking-widest text-xs md:text-sm shadow-[10px_0_20px_rgba(0,0,0,0.5)]">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+          </span>
+          Health Tips
+        </div>
 
-          {/* Headline */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-[4.5rem] font-black text-[#2b4c7e] leading-[1.1] tracking-tight">
-            Your <span className="text-[#1f9b90]">Partner</span> <br className="hidden sm:block" />
-            In Health <span className="text-[#1f9b90]">And</span> <br className="hidden sm:block" />
-            Wellness
+        {/* The Scrolling Content */}
+        <div className="flex whitespace-nowrap animate-[marquee_25s_linear_infinite] pl-[120px] md:pl-[150px] items-center text-sm font-medium tracking-wide">
+          <div className="flex items-center gap-2 mx-8">
+            <Droplets className="w-4 h-4 text-[#1f9b90]" /> Hydration is key: Drink at least 8 glasses of water daily.
+          </div>
+          <div className="flex items-center gap-2 mx-8">
+            <Activity className="w-4 h-4 text-[#f6ac42]" /> Exercise: 30 minutes of daily walking improves cardiovascular health.
+          </div>
+          <div className="flex items-center gap-2 mx-8">
+            <Apple className="w-4 h-4 text-green-400" /> Diet: Include fresh greens and fruits in your daily meals.
+          </div>
+          <div className="flex items-center gap-2 mx-8">
+            <HeartPulse className="w-4 h-4 text-red-400" /> Stress Relief: Practice deep breathing for 5 minutes every morning.
+          </div>
+          <div className="flex items-center gap-2 mx-8">
+            <Stethoscope className="w-4 h-4 text-[#1f9b90]" /> Prevention: Schedule your annual full-body health checkup today.
+          </div>
+        </div>
+        
+        {/* Duplicate for seamless infinite loop */}
+        
+      </div>
+
+      {/* ================= MAIN HERO SECTION ================= */}
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col lg:flex-row items-center relative z-10 pt-10 pb-20 lg:py-12 gap-12 lg:gap-8">
+        
+        {/* LEFT COLUMN: EDITORIAL HEADLINES */}
+        <div className="w-full lg:w-[55%] space-y-8 text-center lg:text-left relative z-20">
+          
+          <h1 className="text-5xl md:text-6xl lg:text-[5rem] xl:text-[5.5rem] font-black text-[#0f172a] leading-[1.05] tracking-tighter uppercase">
+            Your Health, <br />
+            <span className="text-[#2b4c7e]">Our Priority.</span>
           </h1>
           
-          {/* Description */}
-          <p className="text-base md:text-lg text-stone-600 max-w-lg mx-auto lg:mx-0 leading-relaxed font-medium">
-            We are committed to providing you with exceptional, comprehensive medical and healthcare services in our cutting-edge, patient-centered facility, with a special focus on maternal and child health.
+          <div className="w-24 h-2 bg-[#f6ac42] mx-auto lg:mx-0 rounded-full"></div>
+
+          <p className="text-lg md:text-xl text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed font-semibold">
+            Comprehensive medical care, state-of-the-art facilities, and a dedicated rapid-response emergency unit. Your life is safe in our hands.
           </p>
 
-          {/* CTA Buttons */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 md:gap-6">
-            <button className="w-full sm:w-auto px-8 py-4 bg-[#2b4c7e] hover:bg-[#1a365d] text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+            <button className="w-full sm:w-auto px-8 py-4 bg-[#2b4c7e] hover:bg-[#1a365d] text-white rounded-none font-black flex items-center justify-center gap-3 transition-all shadow-xl hover:-translate-y-1 uppercase tracking-widest text-sm">
               <Calendar className="w-5 h-5" />
               Book Appointment
             </button>
             
-            {/* <button className="w-full sm:w-auto px-6 py-4 group flex items-center justify-center gap-4 transition-all">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md group-hover:bg-[#f6ac42] group-hover:text-white transition-colors border border-stone-100 text-[#2b4c7e]">
-                <Play className="w-5 h-5 ml-1 fill-current" />
-              </div>
-              <span className="font-bold text-[#2b4c7e] group-hover:text-[#f6ac42] transition-colors">
-                See how we work
-              </span>
-            </button> */}
+            <button className="w-full sm:w-auto px-8 py-4 bg-white border-2 border-slate-200 hover:border-[#2b4c7e] text-[#2b4c7e] rounded-none font-black flex items-center justify-center gap-3 transition-all uppercase tracking-widest text-sm">
+              View Departments <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* ================= RIGHT COLUMN: HERO IMAGE & CARDS ================= */}
-        <div className="w-full lg:w-1/2 relative h-full flex items-end justify-center lg:justify-end min-h-[50vh] lg:min-h-0 mt-10 lg:mt-0">
+        {/* RIGHT COLUMN: EMERGENCY / AMBULANCE DIGITAL SIGNAGE */}
+        {/* We build this out of CSS and Icons so it perfectly represents Emergency/Ambulance without any bad images loading */}
+        <div className="w-full lg:w-[45%] flex justify-center lg:justify-end">
           
-          <div className="relative w-full max-w-[550px] h-full flex items-end justify-center">
+          <div className="w-full max-w-[500px] bg-[#0f172a] rounded-3xl p-6 md:p-8 shadow-[0_30px_60px_rgba(0,0,0,0.3)] relative overflow-hidden group">
             
-            {/* Soft decorative glow behind the doctors */}
-            <div className="absolute bottom-0 w-[90%] aspect-square bg-gradient-to-t from-[#1f9b90]/20 to-transparent rounded-full blur-3xl translate-y-1/4 z-0"></div>
+            {/* Background design elements to look like a digital billboard */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            {/* Top Red Flasher */}
+            <div className="flex items-center justify-between mb-8 relative z-10">
+              <div className="bg-red-500/20 border border-red-500 text-red-500 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 animate-pulse">
+                <AlertTriangle className="w-4 h-4" /> 24/7 Standby
+              </div>
+              <ShieldPlus className="w-8 h-8 text-slate-600" />
+            </div>
 
-            {/* Main Doctor Image */}
-            <img
-              src={process.env.PUBLIC_URL + "/hero_img.png"}
-              alt="Medical Professionals"
-              className="object-contain object-bottom w-full max-h-[75vh] lg:max-h-[85vh] drop-shadow-2xl relative z-10"
-            />
+            {/* Huge Emergency Typography */}
+            <div className="relative z-10 mb-8">
+              <h2 className="text-6xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none mb-2">
+                Emergency
+              </h2>
+              <h3 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600 uppercase tracking-tight">
+                Response Unit
+              </h3>
+            </div>
 
-            {/* Floating Card 1: Main Stat (Bottom Leftish) */}
-            <div className="absolute z-30 bottom-4 sm:bottom-12 left-0 sm:-left-8 lg:-left-12 bg-white rounded-3xl p-5 shadow-[0_20px_40px_rgb(43,76,126,0.1)] border border-stone-100 w-[90%] sm:w-[320px] mx-auto sm:mx-0 right-0 sm:right-auto transform hover:-translate-y-1 transition-transform duration-300">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-[#1f9b90]/10 flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-[#1f9b90]" />
+            {/* Ambulance Graphic Box */}
+            <div className="bg-slate-800/50 border border-slate-700 p-6 rounded-2xl relative z-10 mb-8 backdrop-blur-md">
+              <div className="flex items-center gap-6">
+                {/* Ambulance/Medical Icon */}
+                <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                  {/* CSS built Medical Cross to guarantee it looks right */}
+                  <div className="relative w-10 h-10">
+                    <div className="absolute top-1/2 left-0 w-full h-3 -translate-y-1/2 bg-red-600 rounded-sm"></div>
+                    <div className="absolute top-0 left-1/2 w-3 h-full -translate-x-1/2 bg-red-600 rounded-sm"></div>
                   </div>
-                  <h3 className="text-base font-black text-[#2b4c7e]">Patient Recovery</h3>
                 </div>
-              </div>
-              
-              <div className="flex items-center justify-between pt-2 border-t border-stone-100/80">
                 <div>
-                  <div className="font-black text-[#2b4c7e] text-xl">150,000+</div>
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">Healing Journeys</div>
-                </div>
-                <div className="w-px h-10 bg-stone-200"></div>
-                <div className="text-right">
-                  <div className="font-black text-[#1f9b90] text-xl">98.5%</div>
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">Satisfaction</div>
+                  <div className="text-white font-bold text-xl uppercase">Ambulance</div>
+                  <div className="text-red-400 font-bold text-sm uppercase tracking-widest mt-1">Dispatch Ready</div>
+                  <div className="text-slate-400 text-xs mt-2 font-medium leading-relaxed">Advanced Cardiac Life Support (ACLS) equipped vehicles.</div>
                 </div>
               </div>
             </div>
 
-            {/* Floating Card 2: Top Award (Top Rightish) */}
-            <div className="absolute z-30 top-[10%] lg:top-[20%] right-0 lg:-right-4 bg-white rounded-2xl p-4 shadow-xl border border-stone-100 flex items-center gap-4 animate-bounce-slow">
-              <div className="w-12 h-12 bg-[#f6ac42]/10 rounded-full flex items-center justify-center shrink-0">
-                 <Award className="w-6 h-6 text-[#f6ac42]" />
-              </div>
-              <div>
-                <div className="text-lg font-black text-[#2b4c7e] leading-tight">No. 1</div>
-                <div className="text-xs font-bold text-stone-500">Top Best Hospital</div>
-              </div>
-            </div>
-
+            {/* Hotline Call Button */}
+            <a href="tel:+918000123456" className="relative z-10 w-full bg-red-600 hover:bg-red-700 text-white py-5 rounded-2xl font-black text-xl uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(220,38,38,0.4)] hover:shadow-[0_15px_40px_rgba(220,38,38,0.6)] transition-all transform hover:-translate-y-1">
+              <PhoneCall className="w-6 h-6 animate-bounce" />
+              Dial 8000 123 456
+            </a>
+            
           </div>
         </div>
+
       </main>
+
+      {/* Global Animations for the Media Ticker */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-100%); }
+        }
+      `}} />
     </div>
   );
 };
