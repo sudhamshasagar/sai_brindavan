@@ -34,7 +34,7 @@ function App() {
         <Routes>
           {/* Route 1: The Main Public Website */}
           <Route path="/" element={<PublicWebsite />} />
-
+ 
           {/* Route 2: The HR / Admin Portal Page */}
           <Route path="/admin" element={<AdminPortal />} />
         </Routes>

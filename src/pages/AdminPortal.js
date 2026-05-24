@@ -60,14 +60,14 @@ const AdminPortal = () => {
   }, []);
 
   // --- Helpers ---
-  const convertDriveLink = (url) => {
-    if (!url) return "";
-    const match = url.match(/\/d\/(.*?)\//);
-    if (match && match[1]) {
-      return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-    }
-    return url;
-  };
+  // const convertDriveLink = (url) => {
+  //   if (!url) return "";
+  //   const match = url.match(/\/d\/(.*?)\//);
+  //   if (match && match[1]) {
+  //     return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  //   }
+  //   return url;
+  // };
 
   const toggleArraySelection = (item, array, setArray) => {
     if (array.includes(item)) {
@@ -114,6 +114,40 @@ const AdminPortal = () => {
     } catch (error) { console.error("Error fetching home settings:", error); }
   };
 
+  const handleImageUpload = async (e) => {
+  const file = e.target.files[0];
+
+  if (!file) return;
+
+  try {
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "hospital_upload");
+
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/dyt28werz/image/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    setDoctorForm({
+      ...doctorForm,
+      photoURL: data.secure_url,
+    });
+
+    setIsUploading(false);
+
+  } catch (error) {
+    console.error("Image upload failed:", error);
+    setIsUploading(false);
+  }
+};
   // --- Firebase Mutators ---
   const addDoctor = async () => {
     try {
@@ -125,8 +159,8 @@ const AdminPortal = () => {
         ...doctorForm,
         languages: selectedLanguages,
         availability: selectedDays,
-        photoURL: convertDriveLink(doctorForm.photoURL),
-        certificateURL: convertDriveLink(doctorForm.certificateURL),
+        photoURL: doctorForm.photoURL,
+        certificateURL: doctorForm.certificateURL,
         createdAt: new Date(),
       });
       alert("Doctor Added Successfully");
@@ -186,7 +220,7 @@ const AdminPortal = () => {
     try {
       const payload = {
         aboutUs: homeSettings.aboutUs,
-        photoURL: convertDriveLink(homeSettings.photoURL)
+        photoURL: homeSettings.photoURL
       };
       await setDoc(doc(db, "settings", "home"), payload);
       setHomeSettings(payload); // Update UI with converted link
@@ -365,7 +399,12 @@ const AdminPortal = () => {
                       <input type="url" placeholder="LinkedIn URL" value={doctorForm.linkedin} onChange={(e) => setDoctorForm({ ...doctorForm, linkedin: e.target.value })} className="px-4 py-3 border rounded-xl" />
 
                       <div className="md:col-span-2">
-                        <input type="text" placeholder="Photo Google Drive Link" value={doctorForm.photoURL} onChange={(e) => setDoctorForm({ ...doctorForm, photoURL: e.target.value })} className="w-full px-4 py-3 border rounded-xl" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="w-full px-4 py-3 border rounded-xl"
+                        />
                       </div>
                       <div className="md:col-span-2">
                         <input type="text" placeholder="Certificate Google Drive Link" value={doctorForm.certificateURL} onChange={(e) => setDoctorForm({ ...doctorForm, certificateURL: e.target.value })} className="w-full px-4 py-3 border rounded-xl" />

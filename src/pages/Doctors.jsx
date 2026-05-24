@@ -4,11 +4,55 @@ import {
   Award, Stethoscope, Clock, ChevronRight, Contact2Icon, IdCardLanyardIcon 
 } from 'lucide-react';
 
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+
 // The component now accepts 'doctorsList' as a prop so your HR portal can inject the parsed CSV data dynamically.
-const Doctors = ({ doctorsList = [] }) => {
+const Doctors = () => {
   const [activeId, setActiveId] = useState(null);
   const scrollRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [doctorsList, setDoctorsList] = useState([]);
+
+useEffect(() => {
+  fetchDoctors();
+}, []);
+
+const fetchDoctors = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, "doctors"));
+
+    const doctorsData = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+
+      return {
+        id: doc.id,
+        name: data.name,
+        specialty: data.specialty,
+        image: data.photoURL,
+        bio: data.description,
+        experience: data.experience,
+        qualifications: data.education,
+
+        education: [
+          data.education,
+          data.collegeName
+        ].filter(Boolean),
+
+        socials: {
+          twitter: data.instagram,
+          linkedin: data.linkedin,
+          mail: data.gmail ? `mailto:${data.gmail}` : null,
+        }
+      };
+    });
+
+    setDoctorsList(doctorsData);
+
+  } catch (error) {
+    console.error("Error fetching doctors:", error);
+  }
+};
 
   // Set the first doctor as default once the dynamic data loads
   useEffect(() => {
