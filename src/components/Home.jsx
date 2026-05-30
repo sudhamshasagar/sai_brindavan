@@ -166,7 +166,7 @@ const Home = () => {
             </p>
 
             <a href="tel:+918000123456" className="w-full bg-red-600 hover:bg-red-700 text-white py-3.5 rounded-xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-md shadow-red-600/20">
-              <PhoneCall className="w-4 h-4" /> Dial 8000 123 456
+              <PhoneCall className="w-4 h-4" /> Dial 6361069736
             </a>
           </div>
 

@@ -1,316 +1,525 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Twitter, Linkedin, Mail, Phone, GraduationCap, 
-  Award, Stethoscope, Clock, ChevronRight, Contact2Icon, IdCardLanyardIcon 
+  Search, Filter, Phone, ArrowLeft, X,
+  CheckCircle2, Star, Clock, GraduationCap, 
+  Briefcase, FileText, BookOpen, Award, Languages, ExternalLink, Calendar,ChevronRight
 } from 'lucide-react';
-
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../firebase'; 
 
-// The component now accepts 'doctorsList' as a prop so your HR portal can inject the parsed CSV data dynamically.
-const Doctors = () => {
-  const [activeId, setActiveId] = useState(null);
-  const scrollRef = useRef(null);
-  const [isHovered, setIsHovered] = useState(false);
+const HospitalDoctors = () => {
+  // --- State Management ---
   const [doctorsList, setDoctorsList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterDept, setFilterDept] = useState("");
+  
+  // Profile View State
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
 
-useEffect(() => {
-  fetchDoctors();
-}, []);
+  // --- Data Fetching ---
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
 
-const fetchDoctors = async () => {
-  try {
-    const querySnapshot = await getDocs(collection(db, "doctors"));
-
-    const doctorsData = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-
-      return {
+  const fetchDoctors = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "doctors"));
+      const doctorsData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        name: data.name,
-        specialty: data.specialty,
-        image: data.photoURL,
-        bio: data.description,
-        experience: data.experience,
-        qualifications: data.education,
-
-        education: [
-          data.education,
-          data.collegeName
-        ].filter(Boolean),
-
-        socials: {
-          twitter: data.instagram,
-          linkedin: data.linkedin,
-          mail: data.gmail ? `mailto:${data.gmail}` : null,
-        }
-      };
-    });
-
-    setDoctorsList(doctorsData);
-
-  } catch (error) {
-    console.error("Error fetching doctors:", error);
-  }
-};
-
-  // Set the first doctor as default once the dynamic data loads
-  useEffect(() => {
-    if (doctorsList?.length > 0 && !activeId) {
-      setActiveId(doctorsList[0].id);
+        ...doc.data()
+      }));
+      setDoctorsList(doctorsData);
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [doctorsList, activeId]);
+  };
 
-  // Smooth Auto-Scrolling Engine using requestAnimationFrame
+  // --- Modal Scroll Lock ---
   useEffect(() => {
-    if (!scrollRef.current || isHovered) return;
+    if (selectedDoctor) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [selectedDoctor]);
 
-    const scrollContainer = scrollRef.current;
-    let animationFrameId;
+  // --- Handlers ---
+  const handleViewProfile = (doctor) => setSelectedDoctor(doctor);
+  const handleCloseProfile = () => setSelectedDoctor(null);
+  
+  const handleBookAppointment = (doctorName) => {
+    alert(`Initiating secure booking for ${doctorName}`);
+  };
 
-    const scrollStep = () => {
-      if (scrollContainer) {
-        // If we reach the end of the scroll container, snap back to the beginning
-        if (scrollContainer.scrollLeft + scrollContainer.clientWidth >= scrollContainer.scrollWidth - 1) {
-          scrollContainer.scrollLeft = 0; 
-        } else {
-          // Advance by 1 pixel every frame for a smooth continuous scroll
-          scrollContainer.scrollLeft += 1;
-        }
-      }
-      animationFrameId = requestAnimationFrame(scrollStep);
-    };
+  // --- Filtering ---
+  const uniqueDepartments = [...new Set(doctorsList.map(d => d.department).filter(Boolean))];
+  const filteredDoctors = doctorsList.filter(doc => {
+    const matchName = doc.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchDept = filterDept ? doc.department === filterDept : true;
+    const matchStatus = doc.status === 'active'; 
+    return matchName && matchDept && matchStatus;
+  });
 
-    animationFrameId = requestAnimationFrame(scrollStep);
-
-    // Cleanup animation frame on unmount or hover state change
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [isHovered]);
-
-  // Handle empty or loading states smoothly
-  if (!doctorsList || doctorsList.length === 0) {
-    return (
-      <div className="w-full py-24 px-6 bg-[#faf8f1] flex justify-center items-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-[#1f9b90] border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-[#2b4c7e] font-bold uppercase tracking-widest text-sm">Loading Specialists...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const activeDoctor = doctorsList.find(d => d.id === activeId) || doctorsList[0];
+  // --- Helpers ---
+  const hasValidData = (arr, key) => arr && arr.length > 0 && arr[0][key] && arr[0][key].trim() !== "";
+  const hasValidStrings = (arr) => arr && arr.length > 0 && arr[0].trim() !== "";
 
   return (
-    <section id="doctors" className="w-full bg-[#faf8f1] py-24 px-6 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-[#f8fafc] font-sans pb-24 selection:bg-[#c19b6c] selection:text-white relative">
       
-      {/* Required CSS for hiding the scrollbar on the carousel and animating the spotlight */}
+      {/* ========================================== */}
+      {/* 1. HERO & SEARCH SECTION                     */}
+      {/* ========================================== */}
+      <div className="bg-white border-b border-slate-200 pt-16 pb-12 px-4 sm:px-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#c19b6c]/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+
+        <div className="max-w-[1200px] mx-auto text-center relative z-10">
+          <span className="inline-block text-[#2b4c7e] font-bold uppercase tracking-widest text-[10px] mb-4 border border-[#c19b6c]/20 px-3 py-1 rounded-full bg-[#c19b6c]/5">
+            Our Medical Experts
+          </span>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-4">
+            Find Your <span className="text-[#1f9b90]">Specialist</span>
+          </h1>
+          <p className="text-slate-500 font-medium mb-10 max-w-2xl mx-auto text-base">
+            Book appointments with world-class doctors dedicated to providing exceptional, personalized healthcare.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto bg-slate-50 p-2 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="relative flex-1 bg-white rounded-xl border border-slate-200 overflow-hidden focus-within:border-[#c19b6c] focus-within:ring-1 focus-within:ring-[#c19b6c] transition-all">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search doctor by name..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-3.5 outline-none text-slate-800 font-medium text-sm"
+              />
+            </div>
+            <div className="relative w-full sm:w-64 bg-white rounded-xl border border-slate-200 overflow-hidden focus-within:border-[#c19b6c] focus-within:ring-1 focus-within:ring-[#c19b6c] transition-all">
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <select 
+                value={filterDept}
+                onChange={(e) => setFilterDept(e.target.value)}
+                className="w-full pl-11 pr-10 py-3.5 outline-none text-slate-800 font-medium text-sm appearance-none bg-transparent cursor-pointer"
+              >
+                <option value="">All Departments</option>
+                {uniqueDepartments.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================== */}
+      {/* 2. SPACIOUS, PREMIUM DIRECTORY GRID          */}
+      {/* ========================================== */}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-5">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-10 h-10 border-4 border-[#c19b6c] border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Loading Directory...</p>
+          </div>
+        ) : filteredDoctors.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
+            <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No Specialists Found</h3>
+            <p className="text-slate-500 font-medium">Please try a different name or department.</p>
+          </div>
+        ) : (
+          /* Changed to a spacious 3-column grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+            {filteredDoctors.map((doctor) => (
+              <div key={doctor.id} className="bg-white border border-slate-200 rounded-[1.5rem] overflow-hidden hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.1)] hover:border-[#c19b6c]/30 transition-all duration-300 flex flex-col relative group">
+                
+                {/* Header Block with Background Accent */}
+                <div className="h-20 bg-[#1f9b90] border-b border-slate-100 relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-slate-100 to-[#c19b6c]/5 opacity-50"></div>
+                  
+                  {/* Featured Badge */}
+                  {doctor.featured && (
+                    <div className="absolute top-4 right-4 bg-[#c19b6c] text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1 z-10">
+                      <Star className="w-3 h-3 fill-current" /> Featured
+                    </div>
+                  )}
+
+                  {/* Large Overlapping Avatar */}
+                  <div className="absolute -bottom-12 left-6 w-28 h-28 rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-white z-10">
+                    <img 
+                      src={doctor.photoURL || "https://via.placeholder.com/300?text=Profile"} 
+                      alt={doctor.name} 
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => { e.target.src = "https://via.placeholder.com/300?text=Profile"; }}
+                    />
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="pt-16 px-6 pb-6 flex-1 flex flex-col">
+                  
+                  {/* Identity */}
+                  <div className="mb-5">
+                    <span className="text-[#1f9b90] text-[10px] font-black uppercase tracking-widest text-centre px-2.5 py-1 rounded-md block w-fit mb-2 truncate">
+                      {doctor.department}
+                    </span>
+                    <h3 className="text-2xl font-black text-slate-900 leading-tight truncate">{doctor.name}</h3>
+                    <p className="text-sm font-bold text-slate-500 mt-1 truncate">{doctor.designation}</p>
+                  </div>
+
+                  {/* Credentials */}
+                  <div className="space-y-3 mb-6">
+                    {hasValidData(doctor.qualifications, 'degree') && (
+                      <div className="flex items-start gap-2.5 text-slate-700">
+                        <GraduationCap className="w-4 h-4 text-[#c19b6c] shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium leading-snug line-clamp-2">
+                          {doctor.qualifications.map(q => q.degree).join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    {doctor.experienceYears && (
+                      <div className="flex items-start gap-2.5 text-slate-700">
+                        <Briefcase className="w-4 h-4 text-[#c19b6c] shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium leading-snug">
+                          {doctor.experienceYears} Experience
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Core Expertise Section */}
+                  {hasValidStrings(doctor.expertise) && (
+                    <div className="mt-auto pt-5 border-t border-slate-100 mb-6">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Top Expertise</p>
+                      <div className="flex flex-wrap gap-2">
+                        {doctor.expertise.slice(0, 3).map((exp, i) => (
+                          <span key={i} className="bg-slate-50 border border-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">
+                            {exp}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="grid grid-cols-2 gap-3 mt-auto">
+                    <button 
+                      onClick={() => handleViewProfile(doctor)}
+                      className="w-full py-3.5 bg-white border border-slate-200 text-slate-700 hover:border-[#c19b6c] hover:text-[#c19b6c] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors text-center"
+                    >
+                      Profile
+                    </button>
+                    <button 
+                      onClick={() => handleBookAppointment(doctor.name)}
+                      className="w-full py-3.5 bg-slate-900 hover:bg-[#c19b6c] text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors shadow-md hover:shadow-lg text-center"
+                    >
+                      Book Visit
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ========================================== */}
+      {/* 3. PROFILE OVERLAY (FULL SCREEN MODAL)       */}
+      {/* ========================================== */}
+      {selectedDoctor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4 lg:p-8">
+          
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={handleCloseProfile}></div>
+
+          <div className="relative w-full max-w-[1000px] h-full sm:h-[95vh] bg-white sm:rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-[fadeSlideUp_0.3s_ease-out_forwards]">
+            
+            {/* Sticky Header with embedded Booking Button */}
+            <div className="bg-white border-b border-slate-100 px-4 sm:px-8 py-4 flex justify-between items-center z-30 shrink-0">
+              <button 
+                onClick={handleCloseProfile} 
+                className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Back to Directory</span>
+              </button>
+              
+              <button 
+                onClick={() => handleBookAppointment(selectedDoctor.name)}
+                className="px-5 sm:px-8 py-2.5 bg-[#c19b6c] hover:bg-[#a37e50] text-white rounded-lg text-xs font-black uppercase tracking-widest transition-colors shadow-[0_4px_14px_rgba(193,155,108,0.3)] flex items-center gap-2"
+              >
+                <Phone className="w-3.5 h-3.5" /> Book <span className="hidden sm:inline">Appointment</span>
+              </button>
+            </div>
+
+            {/* Scrollable Profile Body */}
+            <div className="flex-1 overflow-y-auto hide-scroll bg-[#f8fafc]">
+              
+              {/* Profile Hero */}
+              <div className="bg-white border-b border-slate-100">
+                <div className="max-w-4xl mx-auto px-6 py-10 lg:py-14 flex flex-col md:flex-row items-center md:items-start gap-8">
+                  
+                  <div className="w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border border-slate-100 bg-slate-50 shrink-0 shadow-sm">
+                    <img 
+                      src={selectedDoctor.photoURL || "https://via.placeholder.com/400"} 
+                      alt={selectedDoctor.name} 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => { e.target.src = "https://via.placeholder.com/400"; }}
+                    />
+                  </div>
+
+                  <div className="text-center md:text-left flex-1 pt-2">
+                    <span className="inline-block bg-[#c19b6c]/10 text-[#c19b6c] border border-[#c19b6c]/20 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3">
+                      {selectedDoctor.department}
+                    </span>
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">{selectedDoctor.name}</h1>
+                    <p className="text-lg font-bold text-slate-500 mb-6">{selectedDoctor.designation}</p>
+
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-slate-600 text-sm font-medium">
+                      {hasValidData(selectedDoctor.qualifications, 'degree') && (
+                        <div className="flex items-center gap-1.5">
+                          <GraduationCap className="w-4 h-4 text-[#c19b6c]" /> 
+                          <span>{selectedDoctor.qualifications.map(q => q.degree).join(', ')}</span>
+                        </div>
+                      )}
+                      {selectedDoctor.experienceYears && (
+                        <div className="flex items-center gap-1.5 md:border-l md:border-slate-300 md:pl-4">
+                          <Briefcase className="w-4 h-4 text-[#c19b6c]" /> 
+                          <span>{selectedDoctor.experienceYears} Exp.</span>
+                        </div>
+                      )}
+                      {selectedDoctor.languages?.length > 0 && (
+                        <div className="flex items-center gap-1.5 md:border-l md:border-slate-300 md:pl-4">
+                          <Languages className="w-4 h-4 text-[#c19b6c]" /> 
+                          <span>{selectedDoctor.languages.join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Details Container */}
+              <div className="max-w-4xl mx-auto px-6 py-10 space-y-12 pb-20">
+                
+                {/* Section: Overview & Objective */}
+                <section>
+                  <h2 className="text-lg font-black text-slate-900 border-b border-slate-200 pb-3 mb-6 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[#c19b6c]" /> Professional Summary
+                  </h2>
+                  {selectedDoctor.careerObjective && (
+                    <p className="text-base font-medium text-slate-800 italic border-l-4 border-[#c19b6c] pl-4 mb-6 leading-relaxed">
+                      "{selectedDoctor.careerObjective}"
+                    </p>
+                  )}
+                  <p className="text-slate-600 font-medium leading-loose whitespace-pre-line text-sm sm:text-base">
+                    {selectedDoctor.summary || "No summary provided."}
+                  </p>
+                </section>
+
+                {/* Section: Clinical Focus & Expertise */}
+                {(hasValidStrings(selectedDoctor.expertise) || hasValidStrings(selectedDoctor.procedures) || hasValidStrings(selectedDoctor.clinicalInterests)) && (
+                  <section>
+                    <h2 className="text-lg font-black text-slate-900 border-b border-slate-200 pb-3 mb-6 flex items-center gap-2">
+                      <Star className="w-5 h-5 text-[#c19b6c]" /> Clinical Focus
+                    </h2>
+                    <div className="space-y-6">
+                      {hasValidStrings(selectedDoctor.expertise) && (
+                        <div>
+                          <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Core Expertise</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedDoctor.expertise.map((item, i) => item && <span key={i} className="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded text-sm font-medium shadow-sm">{item}</span>)}
+                          </div>
+                        </div>
+                      )}
+                      {hasValidStrings(selectedDoctor.procedures) && (
+                        <div>
+                          <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Procedures Performed</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedDoctor.procedures.map((item, i) => item && <span key={i} className="bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded text-sm font-medium shadow-sm">{item}</span>)}
+                          </div>
+                        </div>
+                      )}
+                      {hasValidStrings(selectedDoctor.clinicalInterests) && (
+                        <div>
+                          <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Clinical Interests</h3>
+                          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {selectedDoctor.clinicalInterests.map((item, i) => item && (
+                              <li key={i} className="flex items-start gap-2 text-slate-700 text-sm font-medium">
+                                <span className="w-1.5 h-1.5 bg-[#c19b6c] rounded-full shrink-0 mt-1.5"></span> {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                {/* Section: Credentials */}
+                {(hasValidData(selectedDoctor.qualifications, 'degree') || hasValidData(selectedDoctor.fellowships, 'title')) && (
+                  <section className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                    {hasValidData(selectedDoctor.qualifications, 'degree') && (
+                      <div>
+                        <h2 className="text-lg font-black text-slate-900 border-b border-slate-200 pb-3 mb-6 flex items-center gap-2">
+                          <GraduationCap className="w-5 h-5 text-[#c19b6c]" /> Education
+                        </h2>
+                        <div className="space-y-5">
+                          {selectedDoctor.qualifications.map((q, i) => q.degree && (
+                            <div key={i} className="flex gap-3 items-start">
+                              <div className="w-1.5 h-1.5 bg-[#c19b6c] rounded-full mt-2 shrink-0"></div>
+                              <div>
+                                <h4 className="font-bold text-slate-800 text-sm">{q.degree}</h4>
+                                <p className="text-sm font-medium text-slate-500">{q.institution}</p>
+                                {q.year && <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{q.year}</p>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {hasValidData(selectedDoctor.fellowships, 'title') && (
+                      <div>
+                        <h2 className="text-lg font-black text-slate-900 border-b border-slate-200 pb-3 mb-6 flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-[#c19b6c]" /> Fellowships
+                        </h2>
+                        <div className="space-y-4">
+                          {selectedDoctor.fellowships.map((f, i) => f.title && (
+                            <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                              <h4 className="font-bold text-slate-800 text-sm leading-snug">{f.title}</h4>
+                              <p className="text-sm font-medium text-slate-500 mt-1">{f.institution}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {/* Section: Experience Timeline */}
+                {hasValidData(selectedDoctor.professionalExperience, 'hospital') && (
+                  <section>
+                    <h2 className="text-lg font-black text-slate-900 border-b border-slate-200 pb-3 mb-6 flex items-center gap-2">
+                      <Briefcase className="w-5 h-5 text-[#c19b6c]" /> Experience Timeline
+                    </h2>
+                    <div className="relative border-l-2 border-slate-200 ml-2 space-y-8 pb-2">
+                      {selectedDoctor.professionalExperience.map((exp, i) => exp.hospital && (
+                        <div key={i} className="relative pl-6">
+                          <div className="absolute w-3 h-3 bg-white border-2 border-[#c19b6c] rounded-full -left-[7px] top-1"></div>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">
+                            {exp.startDate || 'Unknown'} - {exp.endDate || 'Present'}
+                          </span>
+                          <h4 className="font-bold text-slate-900 text-base">{exp.designation}</h4>
+                          <p className="text-[#c19b6c] font-bold text-sm mb-2">{exp.hospital}</p>
+                          {exp.description && <p className="text-sm text-slate-600 font-medium leading-relaxed">{exp.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Section: Publications & Awards */}
+                {(hasValidData(selectedDoctor.researchPublications, 'title') || hasValidData(selectedDoctor.awards, 'title')) && (
+                  <section className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                    
+                    {hasValidData(selectedDoctor.researchPublications, 'title') && (
+                      <div>
+                        <h2 className="text-lg font-black text-slate-900 border-b border-slate-200 pb-3 mb-6 flex items-center gap-2">
+                          <BookOpen className="w-5 h-5 text-[#c19b6c]" /> Publications
+                        </h2>
+                        <div className="space-y-4">
+                          {selectedDoctor.researchPublications.map((pub, i) => pub.title && (
+                            <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                              <h4 className="font-bold text-slate-800 text-sm leading-snug mb-1">{pub.title}</h4>
+                              <p className="text-xs text-slate-500 italic mb-2">{pub.journal}</p>
+                              {pub.doi && (
+                                <a 
+                                  href={pub.doi} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white bg-slate-900 hover:bg-[#c19b6c] transition-colors px-3 py-1.5 rounded"
+                                >
+                                  Read Paper <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {hasValidData(selectedDoctor.awards, 'title') && (
+                      <div>
+                        <h2 className="text-lg font-black text-slate-900 border-b border-slate-200 pb-3 mb-6 flex items-center gap-2">
+                          <Award className="w-5 h-5 text-[#c19b6c]" /> Awards
+                        </h2>
+                        <div className="space-y-4">
+                          {selectedDoctor.awards.map((award, i) => award.title && (
+                            <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-start gap-3">
+                              <Star className="w-5 h-5 text-[#c19b6c] fill-current shrink-0 mt-0.5" />
+                              <div>
+                                <h4 className="font-bold text-slate-900 text-sm leading-snug">{award.title}</h4>
+                                <p className="text-xs font-medium text-slate-500 mt-1">{award.organization}</p>
+                                {award.year && <p className="text-[10px] font-bold text-[#c19b6c] mt-1.5 uppercase">{award.year}</p>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+                
+                {/* Bottom Schedule & Fee Section */}
+                <section className="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl mt-8">
+                   <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
+                      <div className="flex-1 w-full">
+                         <h2 className="text-xl font-black mb-4 flex items-center gap-2">
+                           <Clock className="w-5 h-5 text-[#c19b6c]" /> Consultation Details
+                         </h2>
+                         {selectedDoctor.consultationFee && (
+                           <div className="mb-6">
+                             <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Consultation Fee</p>
+                             <p className="text-2xl font-black text-[#c19b6c]">{selectedDoctor.consultationFee}</p>
+                           </div>
+                         )}
+                         {hasValidData(selectedDoctor.availability, 'day') ? (
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                             {selectedDoctor.availability.map((slot, i) => slot.day && (
+                               <div key={i} className="flex justify-between items-center bg-white/10 px-4 py-2 rounded-lg text-sm">
+                                 <span className="font-bold">{slot.day}</span>
+                                 <span className="text-slate-300 font-medium">{slot.startTime || '-'} - {slot.endTime || '-'}</span>
+                               </div>
+                             ))}
+                           </div>
+                         ) : (
+                           <p className="text-slate-400 text-sm italic">Please contact the clinic for the schedule.</p>
+                         )}
+                      </div>
+                   </div>
+                </section>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Internal Custom Styles for missing scrollbars */}
       <style dangerouslySetInnerHTML={{__html: `
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        
         @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(15px); }
+          from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-slide {
-          animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
       `}} />
-
-      {/* Background Decorators */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-[#2b4c7e]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        
-        {/* ================= HEADER ================= */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h4 className="text-[#f6ac42] font-black uppercase tracking-widest text-sm mb-3 flex items-center justify-center gap-2">
-            <span className="w-6 h-1 bg-[#f6ac42] rounded-full"></span>
-            Medical Staff
-            <span className="w-6 h-1 bg-[#f6ac42] rounded-full"></span>
-          </h4>
-          <h2 className="text-4xl md:text-5xl font-black text-[#2b4c7e] tracking-tight mb-4">
-            Our Specialists
-          </h2>
-          <p className="text-lg text-stone-500 font-medium">
-            Select a doctor below to view their complete profile, expertise, and availability.
-          </p>
-        </div>
-
-        {/* ================= INTERACTIVE AUTO-SCROLLING CAROUSEL ================= */}
-        <div className="mb-12 relative">
-          <div 
-            ref={scrollRef}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onTouchStart={() => setIsHovered(true)}
-            onTouchEnd={() => setIsHovered(false)}
-            className="flex gap-4 overflow-x-auto snap-x snap-mandatory hide-scroll pb-4 pt-2 px-2 cursor-grab active:cursor-grabbing"
-          >
-            {doctorsList.map((doctor) => (
-              <button 
-                key={doctor.id}
-                onClick={() => setActiveId(doctor.id)}
-                className={`snap-start shrink-0 w-[280px] p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 text-left relative overflow-hidden
-                  ${activeId === doctor.id 
-                    ? 'bg-white shadow-[0_10px_30px_rgb(31,155,144,0.15)] border-2 border-[#1f9b90] scale-[1.02]' 
-                    : 'bg-white/60 border border-stone-200 hover:bg-white hover:border-[#2b4c7e]/30 opacity-70 hover:opacity-100'}
-                `}
-              >
-                {activeId === doctor.id && (
-                  <div className="absolute top-0 right-0 w-12 h-12 bg-[#1f9b90]/10 rounded-bl-full -z-10"></div>
-                )}
-                
-                <img 
-                  src={doctor.image} 
-                  alt={doctor.name} 
-                  onError={(e) => { e.target.src = "https://via.placeholder.com/150?text=No+Image"; }} // Fallback for bad CSV links
-                  className={`w-16 h-16 rounded-full object-cover transition-all duration-300 ${activeId === doctor.id ? 'ring-2 ring-offset-2 ring-[#1f9b90]' : 'grayscale'}`}
-                />
-                <div>
-                  <h3 className={`font-black line-clamp-1 ${activeId === doctor.id ? 'text-[#2b4c7e]' : 'text-stone-600'}`}>
-                    {doctor.name}
-                  </h3>
-                  <p className={`text-xs font-bold uppercase tracking-wider ${activeId === doctor.id ? 'text-[#1f9b90]' : 'text-stone-400'}`}>
-                    {doctor.specialty}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-          
-          {/* Mobile Swipe/Interaction Indicator */}
-          <div className="flex md:hidden items-center justify-center gap-2 mt-2 text-stone-400 text-xs font-bold uppercase tracking-widest">
-            Tap or hold to pause scroll <ChevronRight className="w-3 h-3" />
-          </div>
-        </div>
-
-        {/* ================= DYNAMIC SPOTLIGHT CARD ================= */}
-        <div key={activeId} className="w-full bg-white rounded-3xl shadow-[0_20px_60px_rgb(43,76,126,0.08)] border border-stone-100 overflow-hidden flex flex-col lg:flex-row animate-fade-slide">
-          
-          {/* Left Side: Clean Portrait Image Only */}
-          <div className="w-full lg:w-[35%] relative bg-stone-100 shrink-0">
-            <div className="aspect-[4/5] lg:aspect-auto lg:h-full w-full relative">
-              <img 
-                src={activeDoctor.image} 
-                alt={activeDoctor.name}
-                onError={(e) => { e.target.src = "https://via.placeholder.com/600?text=Doctor+Profile"; }}
-                className="absolute inset-0 w-full h-full object-cover object-top"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#2b4c7e] via-[#2b4c7e]/10 to-transparent opacity-90 lg:opacity-40"></div>
-              
-              {/* Simplified Image Overlay (Socials removed from here) */}
-              <div className="absolute bottom-0 left-0 w-full p-6 text-white z-10 lg:hidden">
-                <span className="inline-flex items-center gap-1.5 bg-[#f6ac42] text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 shadow-sm">
-                  <Stethoscope className="w-3.5 h-3.5" /> {activeDoctor.specialty}
-                </span>
-                <h2 className="text-3xl font-black leading-tight mb-1">{activeDoctor.name}</h2>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side: Detailed Info & Actions */}
-          <div className="w-full lg:w-[65%] p-6 lg:p-12 flex flex-col justify-between">
-            
-            <div className="space-y-8 lg:space-y-10">
-              
-              {/* Desktop Header Title (Hidden on mobile where the overlay takes over) */}
-              <div className="hidden lg:block border-b border-stone-100 pb-6">
-                <span className="inline-flex items-center gap-1.5 bg-[#f6ac42] text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 shadow-sm">
-                  <Stethoscope className="w-3.5 h-3.5" /> {activeDoctor.specialty}
-                </span>
-                <h2 className="text-4xl font-black text-[#2b4c7e] leading-tight mb-1">{activeDoctor.name}</h2>
-                <p className="text-[#1f9b90] font-bold tracking-wide text-sm">{activeDoctor.qualifications}</p>
-              </div>
-
-              {/* Bio */}
-              <div>
-                <h4 className="text-sm font-black text-[#2b4c7e] uppercase tracking-widest mb-4 flex items-center gap-2">
-                  Professional Overview
-                </h4>
-                <p className="text-stone-600 leading-relaxed lg:text-lg font-medium">
-                  {activeDoctor.bio}
-                </p>
-              </div>
-
-              {/* Education */}
-              {activeDoctor.education && activeDoctor.education.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-black text-[#2b4c7e] uppercase tracking-widest mb-4 flex items-center gap-2">
-                    Education & Credentials
-                  </h4>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {activeDoctor.education.map((degree, index) => (
-                      <li key={index} className="flex items-start gap-3 bg-[#faf8f1] p-4 rounded-xl border border-stone-100">
-                        <GraduationCap className="w-6 h-6 text-[#1f9b90] shrink-0" />
-                        <span className="text-stone-600 text-sm font-bold leading-tight">{degree}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Quick Stats Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white border-2 border-stone-100 p-4 lg:p-5 rounded-2xl flex items-center gap-3 lg:gap-4">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-[#f6ac42]/10 rounded-full flex items-center justify-center shrink-0">
-                    <Award className="w-5 h-5 lg:w-6 lg:h-6 text-[#f6ac42]" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] lg:text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-0.5">Experience</p>
-                    <p className="font-black text-[#2b4c7e] text-base lg:text-lg">{activeDoctor.experience}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border-2 border-stone-100 p-4 lg:p-5 rounded-2xl flex items-center gap-3 lg:gap-4">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-[#1f9b90]/10 rounded-full flex items-center justify-center shrink-0">
-                    <Clock className="w-5 h-5 lg:w-6 lg:h-6 text-[#1f9b90]" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] lg:text-[10px] text-stone-400 font-bold uppercase tracking-widest mb-0.5">Availability</p>
-                    <p className="font-black text-[#2b4c7e] text-base lg:text-lg">Mon - Sat</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Area & Social Links (Moved to Content Side) */}
-            <div className="pt-8 mt-8 border-t border-stone-100 flex flex-col sm:flex-row items-center gap-6 justify-between">
-              
-              {/* Relocated Social Links */}
-              {activeDoctor.socials && (
-                <div className="flex gap-3 w-full sm:w-auto justify-center sm:justify-start">
-                  {activeDoctor.socials.twitter && (
-                    <a href={activeDoctor.socials.twitter} className="w-12 h-12 rounded-full bg-stone-50 border border-stone-200 flex items-center justify-center hover:bg-[#1DA1F2] hover:text-white hover:border-[#1DA1F2] text-stone-400 transition-all shadow-sm">
-                      <Contact2Icon className="w-5 h-5 fill-current" />
-                    </a>
-                  )}
-                  {activeDoctor.socials.linkedin && (
-                    <a href={activeDoctor.socials.linkedin} className="w-12 h-12 rounded-full bg-stone-50 border border-stone-200 flex items-center justify-center hover:bg-[#0A66C2] hover:text-white hover:border-[#0A66C2] text-stone-400 transition-all shadow-sm">
-                      <IdCardLanyardIcon className="w-5 h-5 fill-current" />
-                    </a>
-                  )}
-                  {activeDoctor.socials.mail && (
-                    <a href={activeDoctor.socials.mail} className="w-12 h-12 rounded-full bg-stone-50 border border-stone-200 flex items-center justify-center hover:bg-[#f6ac42] hover:text-white hover:border-[#f6ac42] text-stone-400 transition-all shadow-sm">
-                      <Mail className="w-5 h-5" />
-                    </a>
-                  )}
-                </div>
-              )}
-
-              {/* Call to Action Button */}
-              <button className="w-full sm:w-auto flex-1 py-4 px-8 bg-[#2b4c7e] hover:bg-[#1a365d] text-white rounded-xl font-bold flex items-center justify-center gap-3 transition-transform hover:-translate-y-1 shadow-lg text-sm lg:text-base uppercase tracking-widest">
-                <Phone className="w-5 h-5" /> Schedule Appointment
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-    </section>
+    </div>
   );
 };
 
-export default Doctors;
+export default HospitalDoctors;

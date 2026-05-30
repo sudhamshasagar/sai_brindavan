@@ -97,7 +97,7 @@ const Navbar = () => {
           <div className="flex items-center gap-6">
             <a href="tel:+918000123456" className="flex items-center gap-2 hover:text-[#f6ac42] transition-colors group">
               <PhoneCall className="w-3.5 h-3.5 group-hover:animate-bounce" />
-              <span className="font-bold tracking-widest">+91 8000 123 456</span>
+              <span className="font-bold tracking-widest">+91 6361069736</span>
             </a>
             <div className="w-px h-3 bg-white/20"></div>
             <a href="/admin" className="hover:text-white transition-colors flex items-center gap-1 group">

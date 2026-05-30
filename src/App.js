@@ -9,14 +9,14 @@ import Services from './pages/Services';
 import Doctors from './pages/Doctors';
 import FAQ from './pages/FAQ';
 import Footer from './components/Footer';
-import AdminPortal from './pages/AdminPortal';
+import AdminPortal from './pages/admin/AdminPortal';
 
 // We group all the public-facing sections into one component
 const PublicWebsite = () => {
   return (
     <>
       <Home />
-      <ContactBar />
+      {/* <ContactBar /> */}
       <Values />
       <AboutUs />
       <Services />
