@@ -69,7 +69,7 @@ const HospitalDoctors = () => {
   const hasValidStrings = (arr) => arr && arr.length > 0 && arr[0].trim() !== "";
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans pb-24 selection:bg-[#c19b6c] selection:text-white relative">
+    <div className="min-h-screen bg-[#f8fafc] font-sans pb-24 selection:bg-[#c19b6c] selection:text-white relative" id="doctors">
       
       {/* ========================================== */}
       {/* 1. HERO & SEARCH SECTION                     */}

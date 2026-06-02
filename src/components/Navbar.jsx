@@ -33,7 +33,6 @@ const Navbar = () => {
   const translations = {
     en: {
       home: 'Home',
-      about: 'About Us',
       services: 'Services',
       doctors: 'Our Doctors',
       faq: 'FAQ',
@@ -45,7 +44,6 @@ const Navbar = () => {
     },
     kn: {
       home: 'ಮುಖಪುಟ',
-      about: 'ನಮ್ಮ ಬಗ್ಗೆ',
       services: 'ಸೇವೆಗಳು',
       doctors: 'ನಮ್ಮ ವೈದ್ಯರು',
       faq: 'ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳು',
@@ -61,7 +59,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: t.home, href: '/' }, // Goes back to the top of the home page
-    { name: t.about, href: '/#about' },
+    // { name: t.about, href: '/#about' },
     { name: t.services, href: '/#services' },
     { name: t.doctors, href: '/#doctors' },
     { name: t.faq, href: '/#faq' },
@@ -185,9 +183,12 @@ const Navbar = () => {
             </div>
 
             {/* Desktop CTA Button */}
-            <button className="hidden md:flex px-6 py-3 bg-gradient-to-r from-[#f6ac42] to-[#f49b25] hover:from-[#f49b25] hover:to-[#e08912] text-white rounded-xl font-bold items-center gap-2 transition-all shadow-md shadow-[#f6ac42]/20 hover:shadow-lg hover:shadow-[#f6ac42]/40 hover:-translate-y-0.5 text-xs uppercase tracking-wider shrink-0">
-               <CalendarCheck className="w-4 h-4" /> {t.checkAvail}
-            </button>
+            <a 
+              href="#availability" 
+              className="hidden md:flex px-6 py-3 bg-[#1f9b90] hover:from-[#f49b25] hover:to-[#e08912] text-white rounded-xl font-bold items-center gap-2 transition-all shadow-md shadow-[#f6ac42]/20 hover:shadow-lg hover:shadow-[#f6ac42]/40 hover:-translate-y-0.5 text-xs uppercase tracking-wider shrink-0 cursor-pointer"
+            >
+              <CalendarCheck className="w-4 h-4" /> {t.checkAvail}
+            </a>
 
             {/* Mobile Hamburger Toggle */}
             <button 

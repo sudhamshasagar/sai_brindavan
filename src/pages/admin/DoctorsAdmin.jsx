@@ -458,13 +458,6 @@ const DoctorsAdmin = () => {
   return (
     <div className="h-screen w-full bg-[#f8fafc] font-sans flex flex-col overflow-hidden selection:bg-[#c19b6c] selection:text-white">
       {/* Navbar Placeholder */}
-      <div className="h-16 bg-white border-b border-slate-200 flex items-center px-6 shrink-0 z-20">
-        <div className="flex items-center gap-2">
-          <Stethoscope className="w-6 h-6 text-[#c19b6c]" />
-          <h1 className="text-xl font-black text-slate-900 tracking-tight">elv8 <span className="text-slate-400 font-medium">| Medical Control Panel</span></h1>
-        </div>
-      </div>
-
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-32">
         <div className="max-w-[1400px] mx-auto space-y-8 animate-[fadeSlideUp_0.4s_ease-out_forwards]">
 
