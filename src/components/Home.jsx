@@ -95,7 +95,7 @@ const Home = () => {
           <div className="absolute bottom-0 left-1/3 w-96 h-96 rounded-full bg-amber-100/40 blur-3xl" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 lg:pt-20 lg:pb-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 lg:pt-5 lg:pb-28">
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -103,12 +103,7 @@ const Home = () => {
             className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center"
           >
             {/* LEFT COLUMN */}
-            <div className="lg:col-span-6 space-y-8">
-              <motion.div variants={fadeUp} className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/70 backdrop-blur px-4 py-1.5 text-xs sm:text-sm font-medium text-teal-800 shadow-sm">
-                <span className="flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-                NABH-inspired standards • Trusted since 1999
-              </motion.div>
-
+            <div className="lg:col-span-6 space-y-5">
               <motion.h1
                 variants={fadeUp}
                 className="font-serif text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.05] tracking-tight text-slate-900"
@@ -122,7 +117,7 @@ const Home = () => {
                 </span>
               </motion.h1>
 
-              {loading ? (
+              {/* {loading ? (
                 <motion.div variants={fadeUp} className="space-y-3">
                   <div className="h-4 w-full bg-slate-200/70 rounded animate-pulse" />
                   <div className="h-4 w-11/12 bg-slate-200/70 rounded animate-pulse" />
@@ -133,7 +128,7 @@ const Home = () => {
                   {homeData.aboutUs ||
                     'At Sai Brindavan Hospital, we blend state-of-the-art medical technology with unwavering empathy — a premier destination for women, children, and family healthcare where clinical excellence and compassionate healing go hand in hand.'}
                 </motion.p>
-              )}
+              )} */}
 
               {/* CTAs */}
               <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -158,7 +153,6 @@ const Home = () => {
                   <div className="min-w-0">
                     <p className="text-[11px] font-bold tracking-widest uppercase text-rose-600">Emergency · 24 / 7</p>
                     <h3 className="mt-0.5 text-lg sm:text-xl font-bold text-slate-900 truncate">Need Immediate Help?</h3>
-                    <p className="text-xs sm:text-sm text-slate-600 mt-0.5">ACLS-equipped rapid-response teams on standby.</p>
                     <a
                       href="tel:6361069736"
                       className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-sm font-semibold transition"
@@ -228,7 +222,7 @@ const Home = () => {
           </motion.div>
 
           {/* Trust Stats Row */}
-          <motion.div
+          {/* <motion.div
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
@@ -249,7 +243,7 @@ const Home = () => {
                 </div>
               </motion.div>
             ))}
-          </motion.div>
+          </motion.div> */}
         </div>
       </section>
 

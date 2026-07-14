@@ -1,202 +1,245 @@
-import React from 'react';
-import { MapPin, Phone, Mail, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Phone, Mail, ArrowRight, Clock, ShieldPlus, Heart, Send } from 'lucide-react';
 
-// --- Real Inline SVGs for Social Media ---
+// --- Inline SVG Social Icons ---
 const FacebookIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.5 2.9h-2.4v7A10 10 0 0 0 22 12Z"/>
   </svg>
 );
-
 const InstagramIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="18" height="18" rx="5"/>
+    <circle cx="12" cy="12" r="4"/>
+    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
   </svg>
 );
-
 const LinkedinIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-    <rect x="2" y="9" width="4" height="12"></rect>
-    <circle cx="4" cy="4" r="2"></circle>
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M4.98 3.5A2.5 2.5 0 1 1 5 8.5a2.5 2.5 0 0 1-.02-5ZM3 9.75h4V21H3V9.75ZM9.5 9.75h3.8v1.55h.05a4.17 4.17 0 0 1 3.75-2.05C21 9.25 22 11.7 22 15v6h-4v-5.3c0-1.27-.02-2.9-1.77-2.9-1.77 0-2.04 1.38-2.04 2.8V21h-4V9.75Z"/>
   </svg>
 );
-
 const YoutubeIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M23 12s0-3.6-.46-5.32a2.78 2.78 0 0 0-1.96-1.97C18.86 4.25 12 4.25 12 4.25s-6.86 0-8.58.46A2.78 2.78 0 0 0 1.46 6.68 29.2 29.2 0 0 0 1 12a29.2 29.2 0 0 0 .46 5.32 2.78 2.78 0 0 0 1.96 1.97c1.72.46 8.58.46 8.58.46s6.86 0 8.58-.46a2.78 2.78 0 0 0 1.96-1.97C23 15.6 23 12 23 12ZM10 15.5v-7l6 3.5-6 3.5Z"/>
   </svg>
 );
 
 const Footer = () => {
+  const [email, setEmail] = useState('');
+  const year = new Date().getFullYear();
+
+  const explore = ['Home', 'About Us', 'Services', 'Find a Doctor', 'Timetable'];
+  const patients = ['Book Appointment', 'Emergency Care', 'Insurance', 'Contact Us', 'FAQ'];
+  const socials = [
+    { Icon: FacebookIcon, label: 'Facebook', href: '#' },
+    { Icon: InstagramIcon, label: 'Instagram', href: '#' },
+    { Icon: LinkedinIcon, label: 'LinkedIn', href: '#' },
+    { Icon: YoutubeIcon, label: 'YouTube', href: '#' },
+  ];
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setEmail('');
+  };
+
   return (
-    <footer id="contact" className="w-full relative mt-32 font-sans selection:bg-[#1f9b90] selection:text-white">
-      
-      {/* ================= TOP CURVE SVG ================= */}
-      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none transform -translate-y-[99%] z-0">
-        <svg 
-          className="w-full h-12 md:h-20 lg:h-28 text-[#e0f1ef] block drop-shadow-[0_-10px_15px_rgba(0,0,0,0.02)]" 
-          viewBox="0 0 1440 120" 
-          preserveAspectRatio="none" 
-          fill="currentColor"
-        >
-          <path d="M0,120 L0,120 Q720,-60 1440,120 Z" />
-        </svg>
+    <footer className="relative isolate overflow-hidden bg-gradient-to-b from-[#0b3b3a] via-[#0a2e2e] to-[#061f1f] text-white">
+      {/* Decorative background glow */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-40 -left-32 h-56 w-96 rounded-full bg-[#1f9b90]/20 blur-3xl" />
+        <div className="absolute top-20 right-0 h-[18rem] w-[28rem] rounded-full bg-[#f6ac42]/10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-[#1f9b90]/10 blur-3xl" />
       </div>
 
-      {/* ================= MAIN FOOTER BODY ================= */}
-      <div className="bg-[#e0f1ef] pt-12 md:pt-16 pb-16 px-4 sm:px-6 relative z-10">
-        
-        {/* Overlapping Shield Badge */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[65%] z-20 flex flex-col items-center justify-center w-28 h-32 md:w-36 md:h-40 bg-white rounded-b-[2.5rem] rounded-t-3xl shadow-[0_20px_40px_rgba(31,155,144,0.15)] border-[6px] border-white group hover:-translate-y-[70%] transition-transform duration-500">
-          <img src={process.env.PUBLIC_URL + "/logo.jpg"}  alt="Sai Brindavan Logo" className="w-10 h-14 md:w-12 md:h-12 object-contain mb-2 group-hover:scale-110 transition-transform duration-500" />
-          <span className="text-[#2b4c7e] font-black text-[10px] md:text-xs tracking-widest uppercase text-center leading-tight">
-            Sai<br/>Brindavan
-          </span>
-        </div>
+      {/* Top curve */}
+      <svg
+        className="block w-full h-6 md:h-16 text-white"
+        viewBox="0 0 1440 80"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path d="M0,80 C360,0 1080,0 1440,80 L1440,0 L0,0 Z" fill="currentColor" />
+      </svg>
 
-        <div className="max-w-[1400px] mx-auto mt-12 md:mt-8">
-          
-          {/* Footer Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-10">
-            
-            {/* Column 1: Hospital Info */}
-            <div className="lg:col-span-4 space-y-6">
-              <h3 className="text-2xl font-black text-[#2b4c7e] leading-tight pr-4">
-                Sai Brindavan Medical & <br /> Healthcare Center
-              </h3>
-              
-              <ul className="space-y-4">
-                <li className="flex items-start gap-4 text-[#2b4c7e]/80 font-medium group">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#1f9b90] transition-colors duration-300">
-                    <MapPin className="w-5 h-5 text-[#1f9b90] group-hover:text-white transition-colors duration-300" />
-                  </div>
-                  <span className="text-sm leading-relaxed pt-1">123 Healthcare Ave, Sagara,<br/>Karnataka 577401</span>
-                </li>
-                <li className="flex items-center gap-4 text-[#2b4c7e]/80 font-medium group">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0 group-hover:bg-[#1f9b90] transition-colors duration-300">
-                    <Phone className="w-5 h-5 text-[#1f9b90] group-hover:text-white transition-colors duration-300" />
-                  </div>
-                  <a href="tel:+918000123456" className="text-sm hover:text-[#1f9b90] transition-colors">+91 63610 69736</a>
-                </li>
-                <li className="flex items-center gap-4 text-[#2b4c7e]/80 font-medium group">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0 group-hover:bg-[#1f9b90] transition-colors duration-300">
-                    <Mail className="w-5 h-5 text-[#1f9b90] group-hover:text-white transition-colors duration-300" />
-                  </div>
-                  <a href="mailto:contact@saibrindavan.com" className="text-sm hover:text-[#1f9b90] transition-colors">contact@saibrindavan.com</a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 2: Quick Links */}
-            <div className="lg:col-span-2 lg:ml-8">
-              <h4 className="text-lg font-bold text-[#2b4c7e] mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#f6ac42]"></span> Explore
-              </h4>
-              <ul className="space-y-4">
-                {['Home', 'Services', 'Find a Doctor', 'Timetable'].map((link) => (
-                  <li key={link}>
-                    <a href={`#${link.toLowerCase().replace(/\s+/g, '')}`} className="text-sm font-bold text-[#2b4c7e]/70 hover:text-[#1f9b90] transition-all duration-300 flex items-center gap-2 group">
-                      <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all text-[#1f9b90]" />
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 3: Patient Info */}
-            <div className="lg:col-span-2">
-              <h4 className="text-lg font-bold text-[#2b4c7e] mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#1f9b90]"></span> Patients
-              </h4>
-              <ul className="space-y-4">
-                {['Book Appointment', 'Emergency Care', 'Contact Us', 'FAQ'].map((link) => (
-                  <li key={link}>
-                    <a href={`#${link.toLowerCase().replace(/\s+/g, '')}`} className="text-sm font-bold text-[#2b4c7e]/70 hover:text-[#1f9b90] transition-all duration-300 flex items-center gap-2 group">
-                      <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all text-[#1f9b90]" />
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 4: Newsletter Subscription */}
-            <div className="lg:col-span-4 bg-white/40 p-8 rounded-3xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <h3 className="text-xl font-black text-[#2b4c7e] mb-3">
-                Health Updates & Newsletter
-              </h3>
-              <p className="text-sm text-[#2b4c7e]/70 font-medium mb-6 leading-relaxed">
-                Subscribe to get the latest medical news, health tips, and hospital updates delivered straight to your inbox.
-              </p>
-              
-              <div className="relative group">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email address" 
-                  className="w-full bg-white border border-stone-200 text-[#2b4c7e] placeholder-stone-400 text-sm px-6 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-[#1f9b90] focus:border-transparent transition-all shadow-sm"
-                />
-                <button className="absolute right-2 top-2 bottom-2 bg-[#2b4c7e] hover:bg-[#1f9b90] text-white px-5 rounded-xl font-bold flex items-center justify-center transition-colors shadow-md group-focus-within:bg-[#1f9b90]">
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+      {/* ============ CTA STRIP ============ */}
+      {/* ============ MAIN GRID ============ */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-14 md:pt-20 pb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
+          {/* Brand + contact */}
+          <div className="lg:col-span-4">
+            <div className="flex items-center gap-3">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#f6ac42] to-[#f49b25] text-[#0b3b3a] shadow-lg shadow-[#f6ac42]/25">
+                <ShieldPlus className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="font-serif text-xl font-bold leading-tight">Sai Brindavan</div>
+                <div className="text-xs uppercase tracking-[0.2em] text-[#f6ac42]">Healthcare Center</div>
               </div>
             </div>
 
+            <p className="mt-5 text-sm leading-relaxed text-white/70">
+              A trusted multi-speciality hospital delivering compassionate, world-class healthcare to
+              Sagara and the wider Malnad region.
+            </p>
+
+            <ul className="mt-6 space-y-4 text-sm">
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/5 ring-1 ring-white/10">
+                  <MapPin className="h-4 w-4 text-[#1f9b90]" />
+                </span>
+                <span className="text-white/80">
+                  123 Healthcare Ave, Sagara,<br />Karnataka 577401
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/5 ring-1 ring-white/10">
+                  <Phone className="h-4 w-4 text-[#1f9b90]" />
+                </span>
+                <a href="tel:+916361069736" className="text-white/80 hover:text-[#f6ac42] transition-colors">
+                  +91 63610 69736
+                </a>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/5 ring-1 ring-white/10">
+                  <Mail className="h-4 w-4 text-[#1f9b90]" />
+                </span>
+                <a href="mailto:contact@saibrindavan.com" className="text-white/80 hover:text-[#f6ac42] transition-colors break-all">
+                  contact@saibrindavan.com
+                </a>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/5 ring-1 ring-white/10">
+                  <Clock className="h-4 w-4 text-[#1f9b90]" />
+                </span>
+                <span className="text-white/80">Open 24 × 7 • Emergency Always Available</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Explore */}
+          <div className="lg:col-span-2">
+            <h4 className="font-serif text-lg font-bold">Explore</h4>
+            <span className="mt-2 block h-0.5 w-10 rounded-full bg-[#f6ac42]" />
+            <ul className="mt-5 space-y-3">
+              {explore.map((link) => (
+                <li key={link}>
+                  <a href="#" className="group inline-flex items-center gap-2 text-sm text-white/75 hover:text-white transition-colors">
+                    <ArrowRight className="h-3.5 w-3.5 text-[#1f9b90] transition-transform group-hover:translate-x-1" />
+                    {link}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Patients */}
+          <div className="lg:col-span-2">
+            <h4 className="font-serif text-lg font-bold">Patients</h4>
+            <span className="mt-2 block h-0.5 w-10 rounded-full bg-[#f6ac42]" />
+            <ul className="mt-5 space-y-3">
+              {patients.map((link) => (
+                <li key={link}>
+                  <a href="#" className="group inline-flex items-center gap-2 text-sm text-white/75 hover:text-white transition-colors">
+                    <ArrowRight className="h-3.5 w-3.5 text-[#1f9b90] transition-transform group-hover:translate-x-1" />
+                    {link}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Newsletter */}
+          <div className="lg:col-span-4">
+            <h4 className="font-serif text-lg font-bold">Health Updates</h4>
+            <span className="mt-2 block h-0.5 w-10 rounded-full bg-[#f6ac42]" />
+            <p className="mt-5 text-sm text-white/70">
+              Subscribe for medical news, wellness tips, and updates from our specialists — straight to your inbox.
+            </p>
+
+            <form onSubmit={handleSubscribe} className="mt-5">
+              <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-1.5 backdrop-blur focus-within:border-[#1f9b90] focus-within:bg-white/10 transition-colors">
+                <div className="pl-3 text-white/40">
+                  <Mail className="h-4 w-4" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="flex-1 bg-transparent px-2 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#1f9b90] to-[#178a80] px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:-translate-y-0.5 transition-transform"
+                >
+                  <Send className="h-4 w-4" />
+                  <span className="hidden sm:inline">Subscribe</span>
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-white/50">
+                By subscribing you agree to our privacy policy. No spam, unsubscribe anytime.
+              </p>
+            </form>
+
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              {[
+                { k: '25+', v: 'Years Care' },
+                { k: '50k+', v: 'Patients' },
+                { k: '30+', v: 'Specialists' },
+              ].map((s) => (
+                <div key={s.v} className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
+                  <div className="font-serif text-lg font-bold text-[#f6ac42]">{s.k}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-white/60">{s.v}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ================= BOTTOM DARK BAR ================= */}
-      <div className="bg-[#2b4c7e] pt-8 pb-10 px-4 sm:px-6 relative z-10">
-        <div className="max-w-[1400px] mx-auto flex flex-col items-center gap-6">
-          
-          {/* Top Row: Social & Copyright */}
-          <div className="w-full flex flex-col md:flex-row justify-between items-center gap-6 border-b border-white/10 pb-8">
-            
-            {/* Copyright Text */}
-            <div className="text-sm font-medium text-[#c0daf0] order-2 md:order-1 text-center md:text-left">
-              Copyright © {new Date().getFullYear()} <span className="text-white font-bold">Sai Brindavan Hospital</span>.<br className="md:hidden"/> All rights reserved.
+      {/* ============ BOTTOM BAR ============ */}
+      <div className="border-t border-white/10 bg-black/30 backdrop-blur">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <p className="text-xs sm:text-sm text-white/60 text-center md:text-left">
+              © {year} <span className="font-semibold text-white/85">Sai Brindavan Hospital</span>. All rights reserved.
+            </p>
+
+            <div className="flex items-center justify-center gap-3">
+              {socials.map(({ Icon, label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  className="group grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/5 text-white/70 hover:text-white hover:border-[#1f9b90] hover:bg-[#1f9b90]/20 transition-colors"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
             </div>
 
-            {/* Social Links */}
-            <div className="flex items-center gap-3 order-1 md:order-2">
-              <a href="#" className="w-10 h-10 rounded-xl bg-white/10 border border-white/5 flex items-center justify-center text-white hover:bg-[#3b5998] hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-                <FacebookIcon className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-xl bg-white/10 border border-white/5 flex items-center justify-center text-white hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-                <InstagramIcon className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-xl bg-white/10 border border-white/5 flex items-center justify-center text-white hover:bg-[#0077b5] hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-                <LinkedinIcon className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-xl bg-white/10 border border-white/5 flex items-center justify-center text-white hover:bg-[#FF0000] hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-                <YoutubeIcon className="w-5 h-5" />
-              </a>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/50">
+              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+              <span className="h-1 w-1 rounded-full bg-white/30" />
+              <a href="#" className="hover:text-white transition-colors">Terms</a>
+              <span className="h-1 w-1 rounded-full bg-white/30" />
+              <a href="#" className="hover:text-white transition-colors">Sitemap</a>
             </div>
-
           </div>
 
-          {/* Bottom Row: Digiyuktha Credit - Centered Perfectly */}
-          <div className="flex items-center justify-center w-full">
-            <p className="text-sm text-[#c0daf0]/80 font-medium flex items-center gap-1.5">
-              Designed & Developed by 
-              <a 
-                href="https://digiyuktha.com" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-[#f6ac42] font-black tracking-wide hover:text-white transition-colors"
-              >
+          <div className="mt-5 flex items-center justify-center text-xs text-white/50">
+            <span className="inline-flex items-center gap-1.5">
+              Designed & Developed with <Heart className="h-3 w-3 text-[#f6ac42] fill-[#f6ac42]" /> by
+              <a href="#" className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#f6ac42] to-[#1f9b90] hover:underline">
                 Digiyuktha
               </a>
-            </p>
+            </span>
           </div>
-
         </div>
       </div>
-      
     </footer>
   );
 };
