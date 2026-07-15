@@ -35,7 +35,7 @@ const PublicWebsite = () => {
 
 function App() {
   return (
-    <Router>
+    <Router basename="/sai_brindavan">
       <Routes>
 
         {/* Main Website */}
