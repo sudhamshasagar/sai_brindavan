@@ -20,10 +20,6 @@ const PublicWebsite = () => {
   return (
     <>
       <Home />
-      {/* Uncomment when ready */}
-      {/* <Values /> */}
-      {/* <AboutUs /> */}
-
       <Services />
       <Doctors />
       <DoctorAvailability/>
@@ -31,6 +27,7 @@ const PublicWebsite = () => {
       <Footer />
     </>
   );
+
 };
 
 function App() {

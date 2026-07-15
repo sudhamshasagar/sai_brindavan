@@ -48,11 +48,11 @@ const Navbar = () => {
   const t = translations[language];
 
   const navLinks = [
-    { name: t.home, href: '/' },
-    { name: t.services, href: '/#services' },
-    { name: t.doctors, href: '/#doctors' },
-    { name: t.faq, href: '/#faq' },
-  ];
+  { name: t.home, href: `${process.env.PUBLIC_URL}/` },
+  { name: t.services, href: `${process.env.PUBLIC_URL}/#services` },
+  { name: t.doctors, href: `${process.env.PUBLIC_URL}/#doctors` },
+  { name: t.faq, href: `${process.env.PUBLIC_URL}/#faq` },
+];
 
   const toggleLanguage = (lang) => {
     setLanguage(lang);
@@ -99,7 +99,7 @@ const Navbar = () => {
               <span className="font-bold tracking-widest">+91 63610 69736</span>
             </a>
             <span className="w-px h-3 bg-white/15" />
-            <a href="/admin" className="hover:text-white transition-colors flex items-center gap-1 group text-white/70">
+            <a href={`${process.env.PUBLIC_URL}/admin`} className="hover:text-white transition-colors flex items-center gap-1 group text-white/70">
               {t.portal}
               <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </a>
@@ -187,7 +187,7 @@ const Navbar = () => {
 
             {/* CTA */}
             <a
-              href="#availability"
+              href={`${process.env.PUBLIC_URL}/#availability`}
               className="hidden md:inline-flex relative overflow-hidden px-5 py-2.5 bg-gradient-to-r from-[#1f9b90] to-[#178278] text-white rounded-full font-bold items-center gap-2 text-[11px] uppercase tracking-widest shadow-lg shadow-[#1f9b90]/25 hover:shadow-xl hover:shadow-[#1f9b90]/40 hover:-translate-y-0.5 transition-all"
             >
               <span className="absolute inset-0 bg-gradient-to-r from-[#f6ac42] to-[#f49b25] opacity-0 hover:opacity-100 transition-opacity" />
