@@ -3,6 +3,7 @@ import {
   Menu, X, PhoneCall, Clock, CalendarCheck,
   Globe, ChevronDown, ArrowRight, Stethoscope, MapPin, Sparkles
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -99,10 +100,13 @@ const Navbar = () => {
               <span className="font-bold tracking-widest">+91 63610 69736</span>
             </a>
             <span className="w-px h-3 bg-white/15" />
-            <a href={`${process.env.PUBLIC_URL}/admin`} className="hover:text-white transition-colors flex items-center gap-1 group text-white/70">
-              {t.portal}
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-            </a>
+           <Link
+            to="/admin"
+            className="hover:text-white transition-colors flex items-center gap-1 group text-white/70"
+          >
+            {t.portal}
+            <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+          </Link>
           </div>
         </div>
       </div>
