@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/sai_brindavan/static/css/main.eb651104.css",
-    "main.js": "/sai_brindavan/static/js/main.a954f82f.js",
+    "main.js": "/sai_brindavan/static/js/main.e090512b.js",
     "index.html": "/sai_brindavan/index.html",
     "main.eb651104.css.map": "/sai_brindavan/static/css/main.eb651104.css.map",
-    "main.a954f82f.js.map": "/sai_brindavan/static/js/main.a954f82f.js.map"
+    "main.e090512b.js.map": "/sai_brindavan/static/js/main.e090512b.js.map"
   },
   "entrypoints": [
     "static/css/main.eb651104.css",
-    "static/js/main.a954f82f.js"
+    "static/js/main.e090512b.js"
   ]
 }
