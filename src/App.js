@@ -9,6 +9,8 @@ import AboutUs from './pages/AboutUs';
 import Services from './pages/Services';
 import Doctors from './pages/Doctors';
 import FAQ from './pages/FAQ';
+import Blogs from "./pages/Blogs";
+import BlogDetails from "./pages/BlogDetails";
 
 import AdminPortal from './pages/admin/AdminPortal';
 
@@ -20,19 +22,29 @@ const PublicWebsite = () => {
   return (
     <>
       <Home />
+      {/* Uncomment when ready */}
+      {/* <Values /> */}
+      {/* <AboutUs /> */}
+
       <Services />
       <Doctors />
       <DoctorAvailability/>
+      <Blogs/>
       <FAQ />
       <Footer />
     </>
   );
-
 };
 
 function App() {
   return (
-    <Router basename="/sai_brindavan">
+    <Router
+      basename={
+        process.env.NODE_ENV === "production"
+          ? "/sai_brindavan"
+          : "/"
+      }
+    >
       <Routes>
 
         {/* Main Website */}
@@ -48,6 +60,8 @@ function App() {
         {/* Future Routes */}
         <Route path="/services" element={<Services />} />
         <Route path="/about" element={<AboutUs />} />
+        <Route path="/blogs" element={<Blogs />} />
+        <Route path="/blogs/:slug" element={<BlogDetails />} />
         <Route path="/faq" element={<FAQ />} />
 
       </Routes>

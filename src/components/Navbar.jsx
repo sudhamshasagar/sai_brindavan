@@ -22,36 +22,46 @@ const Navbar = () => {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isMobileMenuOpen]);
 
-  const translations = {
-    en: {
-      home: 'Home', services: 'Services', doctors: 'Our Doctors', faq: 'FAQ',
-      emergency: '24/7 Emergency Care',
-      portal: 'Admin Portal',
-      checkAvail: 'Check Availability',
-      book: 'Book Appointment',
-      hotline: 'Emergency Hotline',
-      location: 'Sagara, Karnataka',
-      hours: 'Mon – Sat · 8:00 AM – 8:00 PM',
-      tagline: 'We care about everyone',
-    },
-    kn: {
-      home: 'ಮುಖಪುಟ', services: 'ಸೇವೆಗಳು', doctors: 'ನಮ್ಮ ವೈದ್ಯರು', faq: 'ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳು',
-      emergency: '24/7 ತುರ್ತು ಸೇವೆಗಳು',
-      portal: 'ರೋಗಿ ಪೋರ್ಟಲ್',
-      checkAvail: 'ಲಭ್ಯತೆಯನ್ನು ಪರಿಶೀಲಿಸಿ',
-      book: 'ನೇಮಕಾತಿ ಕಾಯ್ದಿರಿಸಿ',
-      hotline: 'ತುರ್ತು ಸಹಾಯವಾಣಿ',
-      location: 'ಬೆಂಗಳೂರು, ಕರ್ನಾಟಕ',
-      hours: 'ಸೋಮ – ಶನಿ · 8:00 – 20:00',
-      tagline: 'NABH ಮಾನ್ಯತೆ · 1998 ರಿಂದ',
-    },
-  };
+const translations = {
+  en: {
+    home: 'Home',
+    services: 'Services',
+    doctors: 'Our Doctors',
+    blogs: 'Blogs',
+    faq: 'FAQ',
+    emergency: '24/7 Emergency Care',
+    portal: 'Admin Portal',
+    checkAvail: 'Check Availability',
+    book: 'Book Appointment',
+    hotline: 'Emergency Hotline',
+    location: 'Sagara, Karnataka',
+    hours: 'Mon – Sat · 8:00 AM – 8:00 PM',
+    tagline: 'We care about everyone',
+  },
+
+  kn: {
+    home: 'ಮುಖಪುಟ',
+    services: 'ಸೇವೆಗಳು',
+    doctors: 'ನಮ್ಮ ವೈದ್ಯರು',
+    blogs: 'ಬ್ಲಾಗ್',
+    faq: 'ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳು',
+    emergency: '24/7 ತುರ್ತು ಸೇವೆಗಳು',
+    portal: 'ರೋಗಿ ಪೋರ್ಟಲ್',
+    checkAvail: 'ಲಭ್ಯತೆಯನ್ನು ಪರಿಶೀಲಿಸಿ',
+    book: 'ನೇಮಕಾತಿ ಕಾಯ್ದಿರಿಸಿ',
+    hotline: 'ತುರ್ತು ಸಹಾಯವಾಣಿ',
+    location: 'ಬೆಂಗಳೂರು, ಕರ್ನಾಟಕ',
+    hours: 'ಸೋಮ – ಶನಿ · 8:00 – 20:00',
+    tagline: 'NABH ಮಾನ್ಯತೆ · 1998 ರಿಂದ',
+  },
+};
   const t = translations[language];
 
   const navLinks = [
   { name: t.home, href: `${process.env.PUBLIC_URL}/` },
   { name: t.services, href: `${process.env.PUBLIC_URL}/#services` },
   { name: t.doctors, href: `${process.env.PUBLIC_URL}/#doctors` },
+  {name: t.blogs, href: `${process.env.PUBLIC_URL}/#blogs`},
   { name: t.faq, href: `${process.env.PUBLIC_URL}/#faq` },
 ];
 

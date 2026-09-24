@@ -4,6 +4,7 @@ import Navbar from "../../components/Navbar";
 import DoctorsAdmin from "./DoctorsAdmin";
 import FaqAdmin from "./FaqAdmin";
 import ServiceAdmin from "./ServiceAdmin"; 
+import BlogAdmin from "./BlogAdmin";
 import DoctorAvailabilityAdmin from "./DoctorAvailabilityAdmin"; // Imported the new Availability Admin
 import { 
   LayoutDashboard, 
@@ -11,7 +12,8 @@ import {
   MessageSquare, 
   ChevronRight,
   BriefcaseMedical,
-  CalendarDays // Added icon for Availability
+  CalendarDays ,
+  FileText
 } from "lucide-react";
 
 const AdminPortal = () => {
@@ -21,6 +23,7 @@ const AdminPortal = () => {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "doctors", label: "Doctors Directory", icon: Stethoscope },
     { id: "services", label: "Hospital Services", icon: BriefcaseMedical },
+    { id: "blogs", label: "Blogs", icon: FileText },
     { id: "availability", label: "Availability & Timetable", icon: CalendarDays }, // Added Availability Tab
     { id: "faq", label: "FAQ Editor", icon: MessageSquare },
   ];
@@ -163,6 +166,7 @@ const AdminPortal = () => {
               {activeTab === "doctors" && <DoctorsAdmin />}
               {activeTab === "services" && <ServiceAdmin />}
               {activeTab === "availability" && <DoctorAvailabilityAdmin />} {/* Added Availability Render */}
+              {activeTab === "blogs" && <BlogAdmin />}
               {activeTab === "faq" && <FaqAdmin />}
             </motion.div>
           </AnimatePresence>
