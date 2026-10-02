@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../../firebase';
 import { 
   collection, 
@@ -47,25 +47,34 @@ const ServiceAdmin = () => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+    // Fetch Services and Doctors
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // 1. Fetch Doctors (for the multi-select dropdown)
+
+      // 1. Fetch Doctors
       const docSnapshot = await getDocs(doctorsCollectionRef);
+
       const doctorsData = docSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+
       setDoctors(doctorsData);
 
       // 2. Fetch Services
-      const q = query(servicesCollectionRef, orderBy('createdAt', 'desc'));
+      const q = query(
+        servicesCollectionRef,
+        orderBy('createdAt', 'desc')
+      );
+
       const srvSnapshot = await getDocs(q);
+
       const servicesData = srvSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+
       setServices(servicesData);
 
     } catch (err) {
@@ -74,7 +83,12 @@ const ServiceAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [doctorsCollectionRef, servicesCollectionRef]);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Handle standard text inputs
   const handleInputChange = (e) => {
