@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import {
   Calendar, PhoneCall, ArrowRight, ShieldPlus, Activity, Megaphone,
-  Stethoscope, HeartPulse, Baby, Award, Clock, MapPin
+  Stethoscope, HeartPulse, Baby, Award
 } from 'lucide-react';
 
 const fadeUp = {
@@ -41,12 +41,6 @@ const Home = () => {
     fetchHomeContent();
   }, []);
 
-  const trustStats = [
-    { icon: Award, value: '25+', label: 'Years of Care' },
-    { icon: HeartPulse, value: '50k+', label: 'Lives Touched' },
-    { icon: Stethoscope, value: '40+', label: 'Specialists' },
-    { icon: Baby, value: '10k+', label: 'Deliveries' },
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50/40 via-white to-teal-50/30 text-slate-800 overflow-x-hidden">
@@ -116,30 +110,21 @@ const Home = () => {
                   <span className="absolute inset-x-0 bottom-1 h-3 bg-rose-200/70 -z-0 rounded-sm" />
                 </span>
               </motion.h1>
-
-              {/* {loading ? (
-                <motion.div variants={fadeUp} className="space-y-3">
-                  <div className="h-4 w-full bg-slate-200/70 rounded animate-pulse" />
-                  <div className="h-4 w-11/12 bg-slate-200/70 rounded animate-pulse" />
-                  <div className="h-4 w-9/12 bg-slate-200/70 rounded animate-pulse" />
-                </motion.div>
-              ) : (
-                <motion.p variants={fadeUp} className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
-                  {homeData.aboutUs ||
-                    'At Sai Brindavan Hospital, we blend state-of-the-art medical technology with unwavering empathy — a premier destination for women, children, and family healthcare where clinical excellence and compassionate healing go hand in hand.'}
-                </motion.p>
-              )} */}
-
               {/* CTAs */}
-              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <button className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-800 hover:to-emerald-700 px-7 py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-teal-600/25 transition-all hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5">
+              <motion.div
+                variants={fadeUp}
+                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+              >
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-teal-700 to-emerald-600 px-7 py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-teal-600/25 opacity-80 cursor-not-allowed"
+                >
                   <Calendar className="w-4 h-4" />
                   Book Appointment
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </button>
-                <button className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-slate-300 bg-white/70 backdrop-blur hover:border-teal-600 hover:text-teal-700 px-7 py-3.5 text-sm sm:text-base font-semibold text-slate-800 transition-all">
-                  <Stethoscope className="w-4 h-4" />
-                  View Specialties
+                  <span className="ml-1 rounded-full bg-white/20 px-2 py-1 text-xs font-medium">
+                    Coming Soon
+                  </span>
                 </button>
               </motion.div>
 
@@ -190,60 +175,10 @@ const Home = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-slate-900/0 to-transparent" />
                     </>
                   )}
-
-                  {/* Floating Trust Stamp */}
-                  <div className="absolute top-5 left-5 rounded-2xl bg-white/95 backdrop-blur px-4 py-3 shadow-xl border border-white flex items-center gap-3">
-                    <div className="grid place-items-center w-10 h-10 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-500 text-white">
-                      <Activity className="w-5 h-5" />
-                    </div>
-                    {/* <div className="leading-tight">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Rated</p>
-                      <p className="text-sm font-bold text-slate-900">★ 4.9 · Trusted Care</p>
-                    </div> */}
-                  </div>
-
-                  {/* Floating Info Chip */}
-                  {/* <div className="absolute bottom-5 left-5 right-5 sm:right-auto sm:max-w-[260px] rounded-2xl bg-white/95 backdrop-blur p-4 shadow-xl border border-white">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-teal-700">
-                      <Clock className="w-3.5 h-3.5" />
-                      OPEN NOW
-                    </div>
-                    <p className="mt-1.5 text-sm font-semibold text-slate-900 leading-snug">
-                      Multi-specialty care with a personal touch.
-                    </p>
-                    <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate">Visit our campus today</span>
-                    </div>
-                  </div> */}
                 </div>
               </div>
             </motion.div>
           </motion.div>
-
-          {/* Trust Stats Row */}
-          {/* <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            className="mt-16 lg:mt-24 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4"
-          >
-            {trustStats.map(({ icon: Icon, value, label }) => (
-              <motion.div
-                key={label}
-                variants={fadeUp}
-                className="group relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white/70 backdrop-blur p-5 sm:p-6 hover:border-teal-400 hover:shadow-lg hover:shadow-teal-500/10 transition-all"
-              >
-                <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-teal-50 opacity-0 group-hover:opacity-100 transition" />
-                <Icon className="w-6 h-6 text-teal-700 mb-3" />
-                <div className="relative">
-                  <p className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-1">{label}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div> */}
         </div>
       </section>
 

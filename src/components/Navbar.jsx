@@ -167,17 +167,6 @@ const translations = {
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
             {/* Language pill */}
             <div className="relative">
-              <button
-                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                className="flex items-center gap-1.5 pl-2.5 pr-2 py-2 rounded-full border border-stone-200 hover:border-[#1f9b90]/40 hover:bg-[#1f9b90]/5 transition-all text-slate-700 font-semibold text-xs"
-              >
-                <Globe className="w-4 h-4 text-[#1f9b90]" />
-                <span className="hidden sm:block uppercase tracking-wider">
-                  {language === 'en' ? 'ENG' : 'ಕನ್ನಡ'}
-                </span>
-                <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
               <div className={`absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-stone-100 overflow-hidden transition-all duration-200 origin-top-right ${isLangDropdownOpen ? 'scale-100 opacity-100 visible' : 'scale-95 opacity-0 invisible'}`}>
                 {[
                   { code: 'en', label: 'English', sub: 'EN' },

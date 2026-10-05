@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Search, Filter, Phone, ArrowLeft, X,
   CheckCircle2, Star, Clock, GraduationCap, 
@@ -15,41 +16,42 @@ const HospitalDoctors = () => {
   const [filterDept, setFilterDept] = useState("");
   
   // Profile View State
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  // Profile View State
+const [selectedDoctor, setSelectedDoctor] = useState(null);
+const [searchParams, setSearchParams] = useSearchParams();
 
-  // --- Data Fetching ---
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
+const doctorIdFromUrl = searchParams.get("doctor");
 
-  const fetchDoctors = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "doctors"));
-      const doctorsData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setDoctorsList(doctorsData);
-    } catch (error) {
-      console.error("Error fetching doctors:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+// Open profile based on URL
+useEffect(() => {
+  if (loading) return;
 
-  // --- Modal Scroll Lock ---
-  useEffect(() => {
-    if (selectedDoctor) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [selectedDoctor]);
+  if (!doctorIdFromUrl) {
+    setSelectedDoctor(null);
+    return;
+  }
 
-  // --- Handlers ---
-  const handleViewProfile = (doctor) => setSelectedDoctor(doctor);
-  const handleCloseProfile = () => setSelectedDoctor(null);
+  const doctor = doctorsList.find(
+    (doc) => doc.id === doctorIdFromUrl
+  );
+
+  if (doctor) {
+    setSelectedDoctor(doctor);
+  } else {
+    console.warn("Doctor not found for ID:", doctorIdFromUrl);
+    setSelectedDoctor(null);
+  }
+}, [doctorIdFromUrl, doctorsList, loading]);
+
+// Profile handlers
+const handleViewProfile = (doctor) => {
+  setSearchParams({ doctor: doctor.id });
+};
+
+const handleCloseProfile = () => {
+  setSelectedDoctor(null);
+  setSearchParams({});
+};
   
   const handleBookAppointment = (doctorName) => {
     alert(`Initiating secure booking for ${doctorName}`);
