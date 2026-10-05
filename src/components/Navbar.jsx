@@ -1,287 +1,625 @@
-import React, { useState, useEffect } from 'react';
+
+import { useEffect, useState, useRef } from "react";
+import { Link, useLocation } from "react-router-dom";
+
 import {
-  Menu, X, PhoneCall, Clock, CalendarCheck,
-  Globe, ChevronDown, ArrowRight, Stethoscope, MapPin, Sparkles
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
+  Menu,
+  X,
+  ChevronDown,
+  Calendar,
+  Globe,
+  Clock,
+  MapPin,
+  PhoneCall,
+  ArrowRight,
+} from "lucide-react";
 
-const Navbar = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [language, setLanguage] = useState('en');
-  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset';
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [isMobileMenuOpen]);
-
-const translations = {
-  en: {
-    home: 'Home',
-    services: 'Services',
-    doctors: 'Our Doctors',
-    blogs: 'Blogs',
-    faq: 'FAQ',
-    emergency: '24/7 Emergency Care',
-    portal: 'Admin Portal',
-    checkAvail: 'Check Availability',
-    book: 'Book Appointment',
-    hotline: 'Emergency Hotline',
-    location: 'Sagara, Karnataka',
-    hours: 'Mon – Sat · 8:00 AM – 8:00 PM',
-    tagline: 'We care about everyone',
-  },
-
-  kn: {
-    home: 'ಮುಖಪುಟ',
-    services: 'ಸೇವೆಗಳು',
-    doctors: 'ನಮ್ಮ ವೈದ್ಯರು',
-    blogs: 'ಬ್ಲಾಗ್',
-    faq: 'ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳು',
-    emergency: '24/7 ತುರ್ತು ಸೇವೆಗಳು',
-    portal: 'ರೋಗಿ ಪೋರ್ಟಲ್',
-    checkAvail: 'ಲಭ್ಯತೆಯನ್ನು ಪರಿಶೀಲಿಸಿ',
-    book: 'ನೇಮಕಾತಿ ಕಾಯ್ದಿರಿಸಿ',
-    hotline: 'ತುರ್ತು ಸಹಾಯವಾಣಿ',
-    location: 'ಬೆಂಗಳೂರು, ಕರ್ನಾಟಕ',
-    hours: 'ಸೋಮ – ಶನಿ · 8:00 – 20:00',
-    tagline: 'NABH ಮಾನ್ಯತೆ · 1998 ರಿಂದ',
-  },
-};
-  const t = translations[language];
-
-  const navLinks = [
-  { name: t.home, href: `${process.env.PUBLIC_URL}/` },
-  { name: t.services, href: `${process.env.PUBLIC_URL}/#services` },
-  { name: t.doctors, href: `${process.env.PUBLIC_URL}/#doctors` },
-  {name: t.blogs, href: `${process.env.PUBLIC_URL}/#blogs`},
-  { name: t.faq, href: `${process.env.PUBLIC_URL}/#faq` },
+const NAV_ITEMS = [
+  { label: "Home", target: "home" },
+  { label: "Services", target: "services" },
+  { label: "Doctors", target: "doctors" },
+  { label: "Blogs", target: "blogs" },
+  { label: "FAQ", target: "faq" },
 ];
 
-  const toggleLanguage = (lang) => {
-    setLanguage(lang);
-    setIsLangDropdownOpen(false);
+const LANGUAGES = [
+  { code: "en", label: "English", sub: "EN" },
+  { code: "kn", label: "ಕನ್ನಡ", sub: "KN" },
+];
+
+function Navbar() {
+  const location = useLocation();
+  const dropdownRef = useRef(null);
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const [language, setLanguage] = useState(() => {
+    try {
+      return localStorage.getItem("site-language") || "en";
+    } catch {
+      return "en";
+    }
+  });
+
+  // --------------------------------------------------
+  // Scroll state
+  // --------------------------------------------------
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    handleScroll();
+
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  // --------------------------------------------------
+  // Close menus when route changes
+  // --------------------------------------------------
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsLanguageOpen(false);
+  }, [location.pathname]);
+
+  // --------------------------------------------------
+  // Lock body scroll when mobile menu is open
+  // --------------------------------------------------
+
+  useEffect(() => {
+    document.body.style.overflow = isMobileMenuOpen
+      ? "hidden"
+      : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
+
+  // --------------------------------------------------
+  // Outside click + Escape
+  // --------------------------------------------------
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setIsLanguageOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsLanguageOpen(false);
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, []);
+
+  // --------------------------------------------------
+  // Language
+  // --------------------------------------------------
+
+  const handleLanguageChange = (code) => {
+    setLanguage(code);
+    setIsLanguageOpen(false);
+
+    try {
+      localStorage.setItem("site-language", code);
+    } catch {
+      // Ignore localStorage errors.
+    }
   };
 
+  const currentLangLabel =
+    LANGUAGES.find((lang) => lang.code === language)
+      ?.label || "English";
+
+  // --------------------------------------------------
+  // One-page section navigation
+  // --------------------------------------------------
+
+  const handleSectionNavigation = (target) => {
+    setIsMobileMenuOpen(false);
+    setIsLanguageOpen(false);
+
+    // Home = top of page
+    if (target === "home") {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname
+      );
+
+      return;
+    }
+
+    const element = document.getElementById(target);
+
+    if (!element) {
+      console.warn(
+        `Navbar: Section #${target} was not found.`
+      );
+      return;
+    }
+
+    // Total fixed navbar height:
+    // announcement bar + main navbar
+    const navbarOffset = 117;
+
+    const elementPosition =
+      element.getBoundingClientRect().top +
+      window.scrollY;
+
+    window.scrollTo({
+      top: Math.max(
+        0,
+        elementPosition - navbarOffset
+      ),
+      behavior: "smooth",
+    });
+
+    // Keep URL shareable without causing a React Router
+    // page navigation.
+    window.history.replaceState(
+      null,
+      "",
+      `/#${target}`
+    );
+  };
+
+  // --------------------------------------------------
+  // Navbar
+  // --------------------------------------------------
+
   return (
-    <header className="w-full relative z-50 font-sans">
-      {/* ============ TIER 1 · UTILITY BAR ============ */}
-      <div className="hidden md:block w-full bg-gradient-to-r from-[#0f2544] via-[#1a365d] to-[#2b4c7e] text-white/85 text-[11px] font-medium tracking-wide border-b border-white/10 relative z-50 overflow-hidden">
-        {/* soft glow accent */}
-        <div className="pointer-events-none absolute -top-8 left-1/3 h-24 w-72 rounded-full bg-[#1f9b90]/25 blur-3xl" />
-        <div className="max-w-7xl mx-auto px-6 py-2 flex justify-between items-center relative">
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-[#f6ac42]" />
-              <span>{t.hours}</span>
-            </div>
-            <span className="w-px h-3 bg-white/15" />
-            <div className="flex items-center gap-2">
-              <MapPin className="w-3.5 h-3.5 text-[#f6ac42]" />
-              <span>{t.location}</span>
-            </div>
-            <span className="w-px h-3 bg-white/15" />
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-400/30">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-              </span>
-              <span className="text-white font-semibold uppercase tracking-wider text-[10px]">
-                {t.emergency}
-              </span>
-            </div>
-          </div>
+    <>
+      <header className="fixed inset-x-0 top-0 z-50 transition-all duration-300">
 
-          <div className="flex items-center gap-5">
-            <span className="hidden lg:flex items-center gap-1.5 text-white/70">
-              <Sparkles className="w-3 h-3 text-[#f6ac42]" />
-              {t.tagline}
-            </span>
-            <span className="hidden lg:block w-px h-3 bg-white/15" />
-            <a href="tel:+916361069736" className="flex items-center gap-2 hover:text-[#f6ac42] transition-colors group">
-              <PhoneCall className="w-3.5 h-3.5 group-hover:animate-bounce" />
-              <span className="font-bold tracking-widest">+91 63610 69736</span>
-            </a>
-            <span className="w-px h-3 bg-white/15" />
-           <Link
-            to="/admin"
-            className="hover:text-white transition-colors flex items-center gap-1 group text-white/70"
-          >
-            {t.portal}
-            <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-          </Link>
-          </div>
-        </div>
-      </div>
+        {/* ==================================================
+            TOP ANNOUNCEMENT BAR
+        ================================================== */}
 
-      {/* ============ TIER 2 · MAIN NAV ============ */}
-      <nav
-        className={`w-full transition-all duration-300 sticky top-0 z-50 ${
-          isScrolled
-            ? 'bg-white/80 backdrop-blur-xl shadow-[0_8px_30px_-12px_rgba(43,76,126,0.18)] py-1.5 border-b border-white/60'
-            : 'bg-white py-2 lg:py-3 border-b border-stone-100'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <a href="#" className="flex items-center gap-3 cursor-pointer shrink-0 group">
-            <div className="relative">
-              
-              <div className="relative h-12 w-12 md:h-14 md:w-14 lg:h-16 lg:w-16 rounded-2xl flex items-center justify-center ">
-                <img src={process.env.PUBLIC_URL + "/logo.jpg"}/>
+        <div className="relative border-b border-white/10 bg-gradient-to-r from-[#142848] via-[#1a365d] to-[#122e44] text-xs text-white selection:bg-[#1f9b90] selection:text-white">
+
+          <div className="mx-auto flex h-10 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+
+            {/* LEFT */}
+
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 font-medium text-slate-200">
+                <Clock
+                  className="hidden h-3.5 w-3.5 text-[#f6ac42] sm:inline-block"
+                  aria-hidden="true"
+                />
+                <span className="hidden text-slate-300 sm:inline">
+                  Mon – Sat:
+                </span>
+                <span className="text-[11px] font-semibold tracking-tight text-white">
+                  8:00 AM – 8:00 PM
+                </span>
+              </div>
+              <span className="hidden h-3.5 w-px bg-white/20 md:inline-block" />
+
+              <div className="hidden items-center gap-1.5 text-[11px] text-slate-300 transition-colors hover:text-white md:flex">
+                <MapPin
+                  className="h-3.5 w-3.5 text-[#f6ac42]"
+                  aria-hidden="true"
+                />
+
+                <span>Sagara, Karnataka</span>
+              </div>
+
+            </div>
+
+            {/* CENTER */}
+
+            <div className="flex items-center">
+              <div className="group relative flex items-center gap-2 rounded-full border border-red-500/30 bg-red-950/40 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-100 shadow-[0_0_12px_rgba(239,68,68,0.2)] transition-all hover:border-red-400 hover:bg-red-900/50">
+
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+
+                <span className="bg-gradient-to-r from-red-200 to-white bg-clip-text font-extrabold text-transparent">
+                  24/7 Emergency
+                </span>
+
               </div>
             </div>
-            <div className="flex flex-col justify-center leading-none">
-              <span className="text-base md:text-lg lg:text-2xl font-black text-[#1a365d] tracking-tight">
-                Sai Brindavan
-              </span>
-              <span className="text-[9px] md:text-[10px] font-bold text-[#1f9b90] uppercase tracking-[0.22em] mt-1 flex items-center gap-1.5">
-                <span className="h-px w-4 bg-[#1f9b90]/60" />
-                Medical Center
-              </span>
-            </div>
-          </a>
 
-          {/* Desktop Links */}
-          <div className="hidden lg:flex items-center gap-1 bg-stone-50/70 border border-stone-200/70 rounded-full px-2 py-1.5">
-            {navLinks.map((link) => (
+            {/* RIGHT */}
+
+            <div className="flex items-center gap-2 sm:gap-4">
+
               <a
-                key={link.name}
-                href={link.href}
-                className="relative text-[12px] font-bold text-slate-600 hover:text-white uppercase tracking-widest px-4 py-2 rounded-full transition-colors group"
+                href="tel:+916361069736"
+                className="group flex items-center gap-2 rounded-md bg-white/5 px-2.5 py-1 text-slate-200 transition-all hover:bg-[#f6ac42]/15 hover:text-[#f6ac42]"
+                title="Immediate Emergency Hotline"
               >
-                <span className="relative z-10">{link.name}</span>
-                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-[#1f9b90] to-[#178278] opacity-0 group-hover:opacity-100 transition-opacity" />
-              </a>
-            ))}
-          </div>
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f6ac42]/20 text-[#f6ac42] transition-transform group-hover:scale-110">
+                  <PhoneCall
+                    className="h-3 w-3"
+                    aria-hidden="true"
+                  />
+                </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            {/* Language pill */}
-            <div className="relative">
-              <div className={`absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-stone-100 overflow-hidden transition-all duration-200 origin-top-right ${isLangDropdownOpen ? 'scale-100 opacity-100 visible' : 'scale-95 opacity-0 invisible'}`}>
-                {[
-                  { code: 'en', label: 'English', sub: 'EN' },
-                  { code: 'kn', label: 'ಕನ್ನಡ', sub: 'KN' },
-                ].map((l) => (
-                  <button
-                    key={l.code}
-                    onClick={() => toggleLanguage(l.code)}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold transition-colors ${
-                      language === l.code
-                        ? 'bg-gradient-to-r from-[#1f9b90]/10 to-transparent text-[#1f9b90]'
-                        : 'text-slate-600 hover:bg-stone-50'
-                    }`}
+                <span className="hidden text-[11px] font-bold tracking-wider text-white group-hover:text-[#f6ac42] sm:inline">
+                  +91 63610 69736
+                </span>
+              </a>
+
+              <span className="h-3.5 w-px bg-white/20" />
+
+              {/* Admin remains accessible but is not part
+                  of the primary public navigation. */}
+
+              <Link
+                to="/admin"
+                className="group flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+              >
+                <span>Admin</span>
+
+                <ArrowRight
+                  className="h-3 w-3 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-white"
+                  aria-hidden="true"
+                />
+              </Link>
+
+            </div>
+
+          </div>
+        </div>
+
+        {/* ==================================================
+            MAIN NAVBAR
+        ================================================== */}
+
+        <div
+          className={[
+            "transition-all duration-300",
+            isScrolled
+              ? "border-b border-slate-200/80 bg-white/95 shadow-md backdrop-blur-xl"
+              : "border-b border-slate-100 bg-white/95 backdrop-blur-md",
+          ].join(" ")}
+        >
+
+          <nav
+            className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
+            aria-label="Main Navigation"
+          >
+
+            {/* BRAND */}
+
+            <button
+              type="button"
+              onClick={() =>
+                handleSectionNavigation("home")
+              }
+              className="group flex shrink-0 items-center gap-3 text-left transition-transform duration-200 active:scale-[0.98]"
+              aria-label="Sai Brindavan Medical Center - Home"
+            >
+              <img
+                src="/logo.jpg"
+                alt="Sai Brindavan Medical Center Logo"
+                className="h-10 w-10 rounded-xl object-contain shadow-xs ring-1 ring-slate-200/60 transition-opacity duration-200 group-hover:opacity-95 sm:h-12 sm:w-12"
+                width="48"
+                height="48"
+              />
+
+              <div className="flex flex-col justify-center leading-none">
+                <span className="text-base font-black tracking-tight text-[#1a365d] md:text-lg lg:text-2xl">
+                  Sai Brindavan
+                </span>
+
+                <span className="mt-1 flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.22em] text-[#1f9b90] md:text-[10px]">
+                  <span className="h-px w-4 bg-[#1f9b90]/60" />
+                  Medical Center
+                </span>
+              </div>
+            </button>
+
+            {/* DESKTOP NAVIGATION */}
+
+            <div className="hidden items-center gap-1 rounded-full border border-slate-200/70 bg-slate-50/80 p-1.5 shadow-inner lg:flex">
+
+              {NAV_ITEMS.map((item) => (
+                <button
+                  key={item.target}
+                  type="button"
+                  onClick={() =>
+                    handleSectionNavigation(item.target)
+                  }
+                  className="rounded-full px-4 py-1.5 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-white/80 hover:text-slate-900"
+                >
+                  {item.label}
+                </button>
+              ))}
+
+            </div>
+
+            {/* DESKTOP ACTIONS */}
+
+            <div className="hidden items-center gap-3 lg:flex">
+
+              {/* Language */}
+
+              {/* <div
+                className="relative"
+                ref={dropdownRef}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIsLanguageOpen(
+                      (previous) => !previous
+                    )
+                  }
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                  aria-haspopup="menu"
+                  aria-expanded={isLanguageOpen}
+                >
+                  <Globe
+                    size={14}
+                    className="text-[#1f9b90]"
+                  />
+
+                  <span>{currentLangLabel}</span>
+
+                  <ChevronDown
+                    size={14}
+                    className={[
+                      "text-slate-400 transition-transform duration-200",
+                      isLanguageOpen
+                        ? "rotate-180"
+                        : "",
+                    ].join(" ")}
+                  />
+                </button>
+
+                {isLanguageOpen && (
+                  <div
+                    className="absolute right-0 top-full mt-2 w-36 overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
+                    role="menu"
                   >
-                    <span>{l.label}</span>
-                    <span className="text-[10px] font-black tracking-widest opacity-60">{l.sub}</span>
+                    {LANGUAGES.map((lang) => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() =>
+                          handleLanguageChange(
+                            lang.code
+                          )
+                        }
+                        className={[
+                          "flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition",
+                          language === lang.code
+                            ? "bg-[#1f9b90]/10 font-semibold text-[#1f9b90]"
+                            : "text-slate-700 hover:bg-slate-50 hover:text-slate-900",
+                        ].join(" ")}
+                        role="menuitem"
+                      >
+                        <span>{lang.label}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {lang.sub}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div> */}
+
+              {/* Availability */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleSectionNavigation(
+                    "availability"
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#1a365d] to-[#1f9b90] px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-[#1f9b90]/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#1f9b90]/30 active:translate-y-0"
+              >
+                <Calendar size={15} />
+                <span>Check Availability</span>
+              </button>
+
+            </div>
+
+            {/* MOBILE / TABLET */}
+
+            <div className="flex items-center gap-2 lg:hidden">
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleSectionNavigation(
+                    "availability"
+                  )
+                }
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f9b90] px-3 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#18837a] active:scale-95"
+              >
+                <Calendar size={14} />
+
+                <span className="hidden sm:inline">
+                  Check Availability
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setIsMobileMenuOpen(
+                    (previous) => !previous
+                  )
+                }
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 active:scale-95"
+                aria-label={
+                  isMobileMenuOpen
+                    ? "Close navigation"
+                    : "Open navigation"
+                }
+                aria-expanded={isMobileMenuOpen}
+              >
+                {isMobileMenuOpen ? (
+                  <X
+                    size={20}
+                    className="stroke-[2.2]"
+                  />
+                ) : (
+                  <Menu
+                    size={20}
+                    className="stroke-[2.2]"
+                  />
+                )}
+              </button>
+
+            </div>
+
+          </nav>
+
+          {/* MOBILE DRAWER */}
+
+          {isMobileMenuOpen && (
+            <div className="max-h-[calc(100vh-7.5rem)] overflow-y-auto border-t border-slate-200/80 bg-white px-4 pb-6 pt-4 shadow-2xl lg:hidden">
+
+              <div className="space-y-1">
+
+                {NAV_ITEMS.map((item) => (
+                  <button
+                    key={item.target}
+                    type="button"
+                    onClick={() =>
+                      handleSectionNavigation(
+                        item.target
+                      )
+                    }
+                    className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-base font-medium text-slate-700 transition-all duration-150 hover:bg-slate-100/70 hover:text-slate-900"
+                  >
+                    <span>{item.label}</span>
                   </button>
                 ))}
+
+              </div>
+
+              <div className="mt-5 space-y-3 border-t border-slate-100 pt-5">
+
+                {/* Language */}
+
+                {/* <div className="flex items-center justify-between rounded-xl border border-slate-200/70 bg-slate-50/80 p-2">
+
+                  <div className="flex items-center gap-2 px-2 text-xs font-semibold text-slate-500">
+                    <Globe
+                      size={15}
+                      className="text-[#1f9b90]"
+                    />
+                    <span>Language</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {LANGUAGES.map((lang) => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() =>
+                          handleLanguageChange(
+                            lang.code
+                          )
+                        }
+                        className={[
+                          "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                          language === lang.code
+                            ? "bg-white font-semibold text-[#1f9b90] shadow-xs"
+                            : "text-slate-600 hover:text-slate-900",
+                        ].join(" ")}
+                      >
+                        {lang.label}
+                      </button>
+                    ))}
+                  </div>
+
+                </div> */}
+
+                {/* Booking */}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSectionNavigation(
+                      "availability"
+                    )
+                  }
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1a365d] to-[#1f9b90] py-3.5 text-center text-sm font-semibold text-white shadow-md shadow-[#1f9b90]/20 active:scale-[0.99]"
+                >
+                  <Calendar size={18} />
+                  <span>Check Doctor Availability</span>
+                </button>
+
+                {/* Emergency */}
+
+                <a
+                  href="tel:+916361069736"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50/80 py-3 text-center text-sm font-semibold text-red-600 transition hover:bg-red-100/80 active:scale-[0.99]"
+                >
+                  <PhoneCall size={18} />
+                  <span>
+                    Call Emergency: +91 63610 69736
+                  </span>
+                </a>
+
               </div>
             </div>
+          )}
 
-            {/* CTA */}
-            <a
-              href={`${process.env.PUBLIC_URL}/#availability`}
-              className="hidden md:inline-flex relative overflow-hidden px-5 py-2.5 bg-gradient-to-r from-[#1f9b90] to-[#178278] text-white rounded-full font-bold items-center gap-2 text-[11px] uppercase tracking-widest shadow-lg shadow-[#1f9b90]/25 hover:shadow-xl hover:shadow-[#1f9b90]/40 hover:-translate-y-0.5 transition-all"
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-[#f6ac42] to-[#f49b25] opacity-0 hover:opacity-100 transition-opacity" />
-              <CalendarCheck className="w-4 h-4 relative z-10" />
-              <span className="relative z-10">{t.checkAvail}</span>
-            </a>
-
-            {/* Mobile toggle */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden relative p-2.5 text-[#1a365d] hover:bg-stone-100 rounded-xl transition-colors border border-stone-200 z-50 bg-white"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? <X className="w-5 h-5" strokeWidth={2.5} /> : <Menu className="w-5 h-5" strokeWidth={2.5} />}
-            </button>
-          </div>
         </div>
-      </nav>
+      </header>
 
-      {/* ============ MOBILE DRAWER ============ */}
+      {/* Navbar spacer */}
+
       <div
-        className={`lg:hidden fixed inset-0 z-40 transition-all duration-500 ease-in-out pt-[72px] ${
-          isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
-        }`}
-      >
-        {/* backdrop */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-white to-[#f5f9fb]/95 backdrop-blur-xl" />
-        {/* decorative blobs */}
-        <div className="absolute top-24 -right-16 h-56 w-56 rounded-full bg-[#1f9b90]/15 blur-3xl" />
-        <div className="absolute bottom-24 -left-16 h-64 w-64 rounded-full bg-[#f6ac42]/15 blur-3xl" />
-
-        <div className="relative flex flex-col h-full px-6 py-6 overflow-y-auto pb-10">
-          {/* emergency chip */}
-          <div
-            className={`flex items-center gap-3 p-3 rounded-2xl bg-red-500/10 border border-red-400/30 mb-6 transition-all duration-500 ${
-              isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
-            }`}
-          >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
-            </span>
-            <span className="text-red-700 font-bold text-xs uppercase tracking-widest">{t.emergency}</span>
-          </div>
-
-          {/* links */}
-          <div className="flex flex-col space-y-1 mb-8">
-            {navLinks.map((link, index) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`group relative text-lg font-black text-slate-800 uppercase tracking-widest py-4 px-4 rounded-2xl border border-transparent hover:border-stone-200 hover:bg-white flex items-center justify-between transition-all duration-300 transform ${
-                  isMobileMenuOpen ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0'
-                }`}
-                style={{ transitionDelay: `${index * 60}ms` }}
-              >
-                <span className="flex items-center gap-3">
-                  <span className="h-6 w-1 rounded-full bg-gradient-to-b from-[#1f9b90] to-[#f6ac42] opacity-60 group-hover:opacity-100 transition-opacity" />
-                  {link.name}
-                </span>
-                <ArrowRight className="w-5 h-5 text-[#1f9b90] group-hover:translate-x-1 transition-transform" />
-              </a>
-            ))}
-          </div>
-
-          {/* footer actions */}
-          <div className={`mt-auto space-y-4 transition-all duration-500 delay-200 transform ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
-            <a href="tel:+916361069736" className="flex items-center p-4 bg-white rounded-2xl gap-4 border border-stone-200 shadow-sm">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1a365d] to-[#2b4c7e] text-white flex items-center justify-center shadow-lg shadow-[#2b4c7e]/25 shrink-0">
-                <PhoneCall className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[10px] font-bold text-[#1f9b90] uppercase tracking-widest">{t.hotline}</div>
-                <div className="text-lg font-black text-slate-800 truncate">+91 63610 69736</div>
-              </div>
-            </a>
-
-            <button className="w-full py-4 bg-gradient-to-r from-[#1f9b90] to-[#178278] text-white rounded-2xl font-black shadow-lg shadow-[#1f9b90]/25 hover:-translate-y-1 transition-transform flex items-center justify-center gap-2 uppercase tracking-widest text-sm">
-              <CalendarCheck className="w-5 h-5" /> {t.book}
-            </button>
-
-            <div className="flex items-center justify-center gap-2 pt-2 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-              <Sparkles className="w-3 h-3 text-[#f6ac42]" />
-              {t.tagline}
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
+        className="h-[117px]"
+        aria-hidden="true"
+      />
+    </>
   );
-};
+}
 
 export default Navbar;

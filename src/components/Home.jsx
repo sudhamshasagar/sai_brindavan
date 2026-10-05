@@ -1,195 +1,266 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import Navbar from './Navbar';
-import { db } from '../firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import React, { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { db } from "../firebase";
 import {
-  Calendar, PhoneCall, ArrowRight, ShieldPlus, Activity, Megaphone,
-  Stethoscope, HeartPulse, Baby, Award
-} from 'lucide-react';
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
-};
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  limit,
+} from "firebase/firestore";
+import {
+  Calendar,
+  PhoneCall,
+  Megaphone,
+  CheckCircle,
+  Clock,
+  Sparkles,
+  Shield,
+} from "lucide-react";
 
 const Home = () => {
-  const [homeData, setHomeData] = useState({ photoURL: '/about.png', aboutUs: '' });
+  const [photoURL, setPhotoURL] = useState("/about.png");
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchHomeContent = async () => {
-      try {
-        const homeDoc = await getDoc(doc(db, 'settings', 'home'));
-        if (homeDoc.exists()) setHomeData(homeDoc.data());
+    let isMounted = true;
 
-        const annQuery = query(collection(db, 'announcements'), where('active', '==', true));
-        const annSnapshot = await getDocs(annQuery);
-        setAnnouncements(annSnapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
-      } catch (error) {
-        console.error('Error fetching home content:', error);
+    const fetchHeroData = async () => {
+      try {
+        const homeRef = doc(db, "settings", "home");
+        const announcementsQuery = query(
+          collection(db, "announcements"),
+          where("active", "==", true),
+          limit(5)
+        );
+
+        const [homeSnap, announcementsSnap] = await Promise.all([
+          getDoc(homeRef),
+          getDocs(announcementsQuery),
+        ]);
+
+        if (isMounted) {
+          if (homeSnap.exists() && homeSnap.data().photoURL) {
+            setPhotoURL(homeSnap.data().photoURL);
+          }
+
+          if (!announcementsSnap.empty) {
+            setAnnouncements(
+              announcementsSnap.docs.map((d) => ({
+                id: d.id,
+                ...d.data(),
+              }))
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Error loading home:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
-    fetchHomeContent();
+
+    fetchHeroData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  const tickerList = useMemo(() => {
+    const base =
+      announcements.length > 0
+        ? announcements
+        : [
+            {
+              id: "1",
+              title: "Outpatient Services",
+              content: "Consultations open Mon–Sat 8:00 AM to 8:00 PM",
+            },
+            {
+              id: "2",
+              title: "Emergency 24/7",
+              content: "Trauma, maternal, and pediatric critical care ready",
+            },
+          ];
+
+    // Duplicate list to guarantee seamless looping without blank space
+    return [...base, ...base, ...base];
+  }, [announcements]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/40 via-white to-teal-50/30 text-slate-800 overflow-x-hidden">
-      <Navbar />
+    <section id="home" className="relative w-full bg-[#f8fafc] overflow-hidden">
+      {/* =====================================================
+          1. HIGH-CONTRAST MARQUEE (Top of Page)
+      ===================================================== */}
+      <style>{`
+        @keyframes tickerScroll {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-33.333%, 0, 0); }
+        }
+        .ticker-track {
+          display: flex;
+          width: max-content;
+          animation: tickerScroll 28s linear infinite;
+        }
+        .ticker-track:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
 
-      {/* ================= LIVE ANNOUNCEMENTS TICKER ================= */}
-      <div className="relative flex items-stretch bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 text-white shadow-md overflow-hidden">
-        {/* Live Badge */}
-        <div className="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-500 shrink-0 z-10 shadow-lg">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-white opacity-75 animate-ping"></span>
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"></span>
-          </span>
-          <span className="text-xs sm:text-sm font-bold tracking-wider uppercase">Live</span>
-        </div>
+      <div className="relative z-20 w-full border-b border-amber-400/20 bg-[#10233d] py-2 text-white shadow-xs">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+          {/* Eyecatching Amber Badge with Pulse */}
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#f6ac42] px-3 py-0.5 text-[11px] font-black uppercase tracking-wider text-slate-950 shadow-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-slate-950 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-slate-950" />
+            </span>
+            <Megaphone className="h-3 w-3" />
+            <span>Notice</span>
+          </div>
 
-        {/* Scrolling content */}
-        <div className="flex-1 overflow-hidden relative">
-          <div className="flex whitespace-nowrap animate-[marquee_40s_linear_infinite] py-2.5">
-            {(announcements.length > 0
-              ? [...announcements, ...announcements]
-              : Array(2).fill({
-                  id: 'default',
-                  title: 'Welcome',
-                  content: 'Sai Brindavan Hospital — excellence in women & child healthcare.',
-                })
-            ).map((ann, i) => (
-              <div key={`${ann.id}-${i}`} className="flex items-center gap-3 px-8 text-sm font-medium">
-                <Megaphone className="w-4 h-4 text-amber-200 shrink-0" />
-                <span>
-                  <span className="font-bold text-amber-200">{ann.title}:</span> {ann.content}
-                </span>
-                <span className="text-white/40">•</span>
-              </div>
-            ))}
+          {/* Continuous Ticker */}
+          <div className="relative flex-1 overflow-hidden">
+            <div className="ticker-track items-center gap-8 py-0.5 text-xs text-slate-200">
+              {tickerList.map((item, idx) => (
+                <div key={`${item.id}-${idx}`} className="flex items-center gap-2">
+                  <span className="font-bold text-[#f6ac42]">{item.title}:</span>
+                  <span className="font-medium text-slate-100">{item.content}</span>
+                  <span className="text-white/30">•</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ================= HERO ================= */}
-      <section className="relative isolate">
-        {/* Decorative blobs */}
-        <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-rose-200/40 blur-3xl" />
-          <div className="absolute top-32 -right-32 w-[32rem] h-[32rem] rounded-full bg-teal-200/40 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 w-96 h-96 rounded-full bg-amber-100/40 blur-3xl" />
-        </div>
+      {/* =====================================================
+          2. DESKTOP RIGHT-SIDE BACKGROUND IMAGE (Screen >= lg)
+      ===================================================== */}
+      <div className="hidden lg:block absolute inset-y-0 right-0 w-1/2 select-none pointer-events-none">
+        {loading ? (
+          <div className="w-full h-full bg-slate-200 animate-pulse" />
+        ) : (
+          <div className="relative w-full h-full">
+            <img
+              src={photoURL}
+              alt="Sai Brindavan Medical Center"
+              className="w-full h-full object-cover object-center"
+              fetchPriority="high"
+              decoding="sync"
+              onError={(e) => {
+                if (!e.currentTarget.src.endsWith("/about.png")) {
+                  e.currentTarget.src = "/about.png";
+                }
+              }}
+            />
+            {/* Seamless blend gradient towards left side */}
+            <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#f8fafc] via-[#f8fafc]/60 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#f8fafc] to-transparent" />
+          </div>
+        )}
+      </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20 lg:pt-5 lg:pb-28">
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center"
-          >
-            {/* LEFT COLUMN */}
-            <div className="lg:col-span-6 space-y-5">
-              <motion.h1
-                variants={fadeUp}
-                className="font-serif text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.05] tracking-tight text-slate-900"
-              >
-                Where <span className="italic text-teal-700">Compassion</span>
-                <br />
-                Meets{' '}
-                <span className="relative inline-block">
-                  <span className="relative z-10 text-rose-600">Healing.</span>
-                  <span className="absolute inset-x-0 bottom-1 h-3 bg-rose-200/70 -z-0 rounded-sm" />
-                </span>
-              </motion.h1>
-              {/* CTAs */}
-              <motion.div
-                variants={fadeUp}
-                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
-              >
-                <button
-                  type="button"
-                  disabled
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-teal-700 to-emerald-600 px-7 py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-teal-600/25 opacity-80 cursor-not-allowed"
-                >
-                  <Calendar className="w-4 h-4" />
-                  Book Appointment
-                  <span className="ml-1 rounded-full bg-white/20 px-2 py-1 text-xs font-medium">
-                    Coming Soon
-                  </span>
-                </button>
-              </motion.div>
-
-              {/* Emergency Card */}
-              <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl border border-rose-200/70 bg-gradient-to-r from-rose-50 via-white to-rose-50/50 p-5 sm:p-6 shadow-sm">
-                <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-rose-200/40 blur-2xl" />
-                <div className="relative grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 sm:gap-5">
-                  <div className="shrink-0 grid place-items-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-rose-600 to-rose-500 text-white shadow-lg shadow-rose-500/30">
-                    <ShieldPlus className="w-7 h-7 sm:w-8 sm:h-8" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-bold tracking-widest uppercase text-rose-600">Emergency · 24 / 7</p>
-                    <h3 className="mt-0.5 text-lg sm:text-xl font-bold text-slate-900 truncate">Need Immediate Help?</h3>
-                    <a
-                      href="tel:6361069736"
-                      className="mt-3 inline-flex items-center gap-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-sm font-semibold transition"
-                    >
-                      <PhoneCall className="w-4 h-4" />
-                      6361069736
-                    </a>
-                  </div>
-                </div>
-              </motion.div>
+      {/* =====================================================
+          3. MAIN HERO CONTENT AREA
+      ===================================================== */}
+      <div className="relative mx-auto max-w-7xl px-4 pt-6 pb-12 sm:px-6 sm:pt-10 sm:pb-16 lg:px-8 lg:py-20">
+        <div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-10">
+          
+          {/* LEFT: Text, Highlights & Actions */}
+          <div className="flex flex-col justify-center lg:col-span-6 z-10">
+            {/* Pill Tag */}
+            <div className="inline-flex w-fit items-center gap-2 rounded-full bg-teal-50 border border-teal-200/80 px-3.5 py-1 text-xs font-semibold text-[#1f9b90]">
+              <Shield className="h-3.5 w-3.5" />
+              <span>Dedicated Patient Care & Diagnostics</span>
             </div>
 
-            {/* RIGHT COLUMN */}
-            <motion.div variants={fadeUp} className="lg:col-span-6 relative">
-              <div className="relative aspect-[4/5] sm:aspect-[5/6] lg:aspect-[4/5] w-full max-w-xl mx-auto">
-                {/* Decorative offset frames */}
-                <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-[2rem] border border-teal-300/60 hidden sm:block" />
-                <div className="absolute inset-0 -translate-x-3 -translate-y-3 rounded-[2rem] bg-gradient-to-br from-rose-200/40 to-teal-200/40 hidden sm:block" />
+            {/* Headline */}
+            <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-[#1a365d] sm:text-4xl lg:text-5xl leading-tight">
+              Advanced Medical Care, <br />
+              <span className="text-[#1f9b90]">Trusted Specialists.</span>
+            </h1>
 
-                {/* Image */}
-                <div className="relative w-full h-full rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-900/10 ring-1 ring-slate-900/5 bg-slate-100">
-                  {loading ? (
-                    <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-100 animate-pulse" />
-                  ) : (
-                    <>
-                      <img
-                       src={process.env.PUBLIC_URL + "/about.png"}
-                        alt="Sai Brindavan Hospital"
-                        className="w-full h-full object-fit"
-                        onError={(e) => {
-                          console.error('Image failed to load:', e.currentTarget.src);
-                          e.currentTarget.src = '/about.png';
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-slate-900/0 to-transparent" />
-                    </>
-                  )}
-                </div>
+            {/* Trust Highlights */}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-md">
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-700 sm:text-sm">
+                <CheckCircle className="h-4 w-4 text-[#1f9b90] shrink-0" />
+                <span>Experienced Doctors</span>
               </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-700 sm:text-sm">
+                <CheckCircle className="h-4 w-4 text-[#1f9b90] shrink-0" />
+                <span>Pharmacy & Labs</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-700 sm:text-sm">
+                <CheckCircle className="h-4 w-4 text-[#1f9b90] shrink-0" />
+                <span>Modern Diagnostics</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-700 sm:text-sm">
+                <CheckCircle className="h-4 w-4 text-[#1f9b90] shrink-0" />
+                <span>Emergency Ready</span>
+              </div>
+            </div>
 
-      {/* Marquee keyframes */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes marquee {
-          0% { transform: translateX(0%); }
-          100% { transform: translateX(-50%); }
-        }
-      ` }} />
-    </div>
+            {/* CTAs */}
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-200 px-5 py-3.5 text-sm font-semibold text-slate-500 shadow-none transition-none"
+              >
+                <Calendar className="h-4 w-4 text-slate-400" />
+                <span>Book Appointment</span>
+                <span className="rounded-full bg-slate-300/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                  Coming Soon
+                </span>
+              </button>
+
+              <a
+                href="tel:+916361069736"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:text-slate-900 active:scale-[0.99]"
+              >
+                <PhoneCall className="h-4 w-4 text-red-500" />
+                <span>Call Emergency</span>
+              </a>
+            </div>
+
+            {/* OPD Timing */}
+            <div className="mt-6 flex items-center gap-2 text-xs text-slate-500">
+              <Clock className="h-3.5 w-3.5 text-[#f6ac42]" />
+              <span>OPD Timings: Mon – Sat (8:00 AM – 8:00 PM)</span>
+            </div>
+          </div>
+
+          {/* ===================================================
+              4. RESPONSIVE IMAGE FOR SMALL & MEDIUM SCREENS (< lg)
+              Framed proportionally without squishing or cutting
+          =================================================== */}
+          <div className="block lg:hidden w-full mt-2 sm:mt-4">
+            <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-sm sm:p-2">
+              {loading ? (
+                <div className="aspect-[16/10] sm:aspect-[2/1] w-full bg-slate-200 animate-pulse rounded-xl" />
+              ) : (
+                <img
+                  src={photoURL}
+                  alt="Sai Brindavan Medical Center"
+                  className="w-full aspect-[16/10] sm:aspect-[2/1] object-cover object-center rounded-xl"
+                  onError={(e) => {
+                    if (!e.currentTarget.src.endsWith("/about.png")) {
+                      e.currentTarget.src = "/about.png";
+                    }
+                  }}
+                />
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
   );
 };
 
