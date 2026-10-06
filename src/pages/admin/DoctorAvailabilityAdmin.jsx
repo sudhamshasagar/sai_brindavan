@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { db } from '../../firebase';
-
 import {
   collection,
   getDocs,
@@ -9,11 +8,9 @@ import {
   doc,
   query,
   where,
-  orderBy,
   serverTimestamp,
   writeBatch,
 } from 'firebase/firestore';
-
 import {
   Calendar,
   Clock,
@@ -31,51 +28,38 @@ import {
   X,
   Star,
   BriefcaseMedical,
+  ShieldCheck,
+  RotateCcw,
 } from 'lucide-react';
-
 import { motion, AnimatePresence } from 'framer-motion';
 
+const DAY_ORDER = {
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+  Sunday: 7,
+};
+
 const DoctorAvailabilityAdmin = () => {
-  /*
-  |--------------------------------------------------------------------------
-  | MAIN STATE
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // MAIN STATE
+  // ---------------------------------------------------
   const [doctors, setDoctors] = useState([]);
-
   const [selectedDoctorId, setSelectedDoctorId] = useState('');
-
   const [loading, setLoading] = useState(true);
-
   const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
 
-  const [message, setMessage] = useState({
-    type: '',
-    text: '',
-  });
-
-  /*
-  |--------------------------------------------------------------------------
-  | TABS
-  |--------------------------------------------------------------------------
-  |
-  | schedule     = Regular Doctor Availability
-  | block        = OT / Leave / Exceptions
-  | specialist   = Weekly Specialists
-  |--------------------------------------------------------------------------
-  */
-
+  // Active Tab: 'schedule' | 'block' | 'specialist'
   const [activeTab, setActiveTab] = useState('schedule');
 
-  /*
-  |--------------------------------------------------------------------------
-  | REGULAR AVAILABILITY STATE
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // SCHEDULE STATE
+  // ---------------------------------------------------
   const [scheduleType, setScheduleType] = useState('week');
-
   const [availability, setAvailability] = useState({
     startDate: '',
     endDate: '',
@@ -83,17 +67,12 @@ const DoctorAvailabilityAdmin = () => {
     endTime: '17:00',
     customDates: [],
   });
-
   const [tempDate, setTempDate] = useState('');
 
-  /*
-  |--------------------------------------------------------------------------
-  | BLOCK / OT STATE
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // BLOCK / OT STATE
+  // ---------------------------------------------------
   const [blocks, setBlocks] = useState([]);
-
   const [newBlock, setNewBlock] = useState({
     title: '',
     details: '',
@@ -103,15 +82,12 @@ const DoctorAvailabilityAdmin = () => {
     notifyDoctor: true,
   });
 
-  /*
-  |--------------------------------------------------------------------------
-  | WEEKLY SPECIALIST STATE
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // WEEKLY SPECIALISTS STATE
+  // ---------------------------------------------------
   const [weeklySpecialists, setWeeklySpecialists] = useState([]);
-
   const [specialistForm, setSpecialistForm] = useState({
+    doctorId: '',
     doctorName: '',
     specialty: '',
     expertise: '',
@@ -123,54 +99,30 @@ const DoctorAvailabilityAdmin = () => {
     photoURL: '',
   });
 
-  /*
-  |--------------------------------------------------------------------------
-  | MESSAGE HELPER
-  |--------------------------------------------------------------------------
-  */
-
   const showMessage = (type, text) => {
-    setMessage({
-      type,
-      text,
-    });
-
+    setMessage({ type, text });
     setTimeout(() => {
-      setMessage({
-        type: '',
-        text: '',
-      });
-    }, 3000);
+      setMessage({ type: '', text: '' });
+    }, 3200);
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | FETCH DOCTORS
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // 1. FETCH ACTIVE DOCTORS
+  // ---------------------------------------------------
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setLoading(true);
-
-        const doctorsSnapshot = await getDocs(
-          collection(db, 'doctors')
-        );
-
+        const doctorsSnapshot = await getDocs(collection(db, 'doctors'));
         setDoctors(
-          doctorsSnapshot.docs.map((doctorDocument) => ({
-            id: doctorDocument.id,
-            ...doctorDocument.data(),
+          doctorsSnapshot.docs.map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
           }))
         );
       } catch (error) {
         console.error('Error fetching doctors:', error);
-
-        showMessage(
-          'error',
-          'Unable to load doctors.'
-        );
+        showMessage('error', 'Unable to load hospital doctors list.');
       } finally {
         setLoading(false);
       }
@@ -179,12 +131,9 @@ const DoctorAvailabilityAdmin = () => {
     fetchDoctors();
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | FETCH SELECTED DOCTOR BLOCKS
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // 2. FETCH BLOCKS FOR SELECTED DOCTOR
+  // ---------------------------------------------------
   useEffect(() => {
     if (!selectedDoctorId) {
       setBlocks([]);
@@ -193,198 +142,104 @@ const DoctorAvailabilityAdmin = () => {
 
     const fetchBlocks = async () => {
       try {
-        /*
-        |--------------------------------------------------------------------------
-        | No orderBy here.
-        |
-        | This avoids requiring a Firestore composite index.
-        | Sorting is done client-side.
-        |--------------------------------------------------------------------------
-        */
-
         const blocksQuery = query(
           collection(db, 'doctor_blocks'),
           where('doctorId', '==', selectedDoctorId)
         );
+        const snapshot = await getDocs(blocksQuery);
+        const data = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        }));
 
-        const blocksSnapshot = await getDocs(blocksQuery);
-
-        const blocksData = blocksSnapshot.docs.map(
-          (blockDocument) => ({
-            id: blockDocument.id,
-            ...blockDocument.data(),
-          })
-        );
-
-        blocksData.sort((a, b) =>
-          (a.date || '').localeCompare(b.date || '')
-        );
-
-        setBlocks(blocksData);
+        data.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        setBlocks(data);
       } catch (error) {
         console.error('Error fetching blocks:', error);
-
-        showMessage(
-          'error',
-          'Unable to load doctor blocks.'
-        );
+        showMessage('error', 'Unable to load doctor exceptions.');
       }
     };
 
     fetchBlocks();
   }, [selectedDoctorId]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | FETCH WEEKLY SPECIALISTS
-  |--------------------------------------------------------------------------
-  */
-
-  const fetchWeeklySpecialists = async () => {
-    try {
-      const specialistsSnapshot = await getDocs(
-        collection(db, 'weekly_specialists')
-      );
-
-      const specialistsData = specialistsSnapshot.docs.map(
-        (specialistDocument) => ({
-          id: specialistDocument.id,
-          ...specialistDocument.data(),
-        })
-      );
-
-      specialistsData.sort((a, b) => {
-        const dayOrder = {
-          Monday: 1,
-          Tuesday: 2,
-          Wednesday: 3,
-          Thursday: 4,
-          Friday: 5,
-          Saturday: 6,
-          Sunday: 7,
-        };
-
-        const firstDay = dayOrder[a.day] || 99;
-        const secondDay = dayOrder[b.day] || 99;
-
-        if (firstDay !== secondDay) {
-          return firstDay - secondDay;
-        }
-
-        return (a.startTime || '').localeCompare(
-          b.startTime || ''
-        );
-      });
-
-      setWeeklySpecialists(specialistsData);
-    } catch (error) {
-      console.error(
-        'Error fetching weekly specialists:',
-        error
-      );
-
-      showMessage(
-        'error',
-        'Unable to load weekly specialists.'
-      );
-    }
-  };
-
+  // ---------------------------------------------------
+  // 3. FETCH WEEKLY SPECIALISTS
+  // ---------------------------------------------------
   useEffect(() => {
+    const fetchWeeklySpecialists = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'weekly_specialists'));
+        const data = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        }));
+
+        data.sort((a, b) => {
+          const first = DAY_ORDER[a.day] || 99;
+          const second = DAY_ORDER[b.day] || 99;
+          if (first !== second) return first - second;
+          return (a.startTime || '').localeCompare(b.startTime || '');
+        });
+
+        setWeeklySpecialists(data);
+      } catch (error) {
+        console.error('Error fetching weekly specialists:', error);
+        showMessage('error', 'Unable to load visiting specialists.');
+      }
+    };
+
     fetchWeeklySpecialists();
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | CUSTOM DATE HELPERS
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // CUSTOM DATE ACTIONS
+  // ---------------------------------------------------
   const handleAddCustomDate = () => {
-    if (!tempDate) {
-      return;
-    }
-
+    if (!tempDate) return;
     if (availability.customDates.includes(tempDate)) {
-      showMessage(
-        'error',
-        'This date has already been selected.'
-      );
-
+      showMessage('error', 'This date is already added.');
       return;
     }
 
-    setAvailability((previous) => ({
-      ...previous,
-
-      customDates: [
-        ...previous.customDates,
-        tempDate,
-      ].sort(),
+    setAvailability((prev) => ({
+      ...prev,
+      customDates: [...prev.customDates, tempDate].sort(),
     }));
-
     setTempDate('');
   };
 
   const removeCustomDate = (dateToRemove) => {
-    setAvailability((previous) => ({
-      ...previous,
-
-      customDates: previous.customDates.filter(
-        (date) => date !== dateToRemove
-      ),
+    setAvailability((prev) => ({
+      ...prev,
+      customDates: prev.customDates.filter((d) => d !== dateToRemove),
     }));
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | SAVE REGULAR AVAILABILITY
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // SAVE AVAILABILITY (ATOMIC FIRESTORE BATCH)
+  // ---------------------------------------------------
   const handleSaveAvailability = async () => {
     if (!selectedDoctorId) {
-      showMessage(
-        'error',
-        'Please select a doctor first.'
-      );
-
+      showMessage('error', 'Please select a doctor first.');
       return;
     }
 
-    if (
-      !availability.startTime ||
-      !availability.endTime
-    ) {
-      showMessage(
-        'error',
-        'Please select consultation start and end time.'
-      );
-
+    if (!availability.startTime || !availability.endTime) {
+      showMessage('error', 'Please specify consultation hours.');
       return;
     }
 
-    if (
-      availability.startTime >= availability.endTime
-    ) {
-      showMessage(
-        'error',
-        'Available Until must be later than Available From.'
-      );
-
+    if (availability.startTime >= availability.endTime) {
+      showMessage('error', 'End time must be later than start time.');
       return;
     }
 
     if (
       scheduleType !== 'custom' &&
-      (!availability.startDate ||
-        !availability.endDate)
+      (!availability.startDate || !availability.endDate)
     ) {
-      showMessage(
-        'error',
-        'Please select the start date and end date.'
-      );
-
+      showMessage('error', 'Please choose start and end dates.');
       return;
     }
 
@@ -392,11 +247,7 @@ const DoctorAvailabilityAdmin = () => {
       scheduleType !== 'custom' &&
       availability.startDate > availability.endDate
     ) {
-      showMessage(
-        'error',
-        'End date cannot be earlier than start date.'
-      );
-
+      showMessage('error', 'End date cannot be earlier than start date.');
       return;
     }
 
@@ -404,164 +255,93 @@ const DoctorAvailabilityAdmin = () => {
       scheduleType === 'custom' &&
       availability.customDates.length === 0
     ) {
-      showMessage(
-        'error',
-        'Please add at least one custom date.'
-      );
-
+      showMessage('error', 'Add at least one custom consultation date.');
       return;
     }
 
     setSubmitting(true);
 
     try {
-      /*
-      |--------------------------------------------------------------------------
-      | REMOVE EXISTING AVAILABILITY RECORDS
-      |--------------------------------------------------------------------------
-      |
-      | Your previous file used addDoc every time.
-      | That created multiple schedules for the same doctor.
-      |
-      | We remove previous records before creating the new schedule.
-      |--------------------------------------------------------------------------
-      */
-
-      const existingScheduleQuery = query(
+      const existingQuery = query(
         collection(db, 'doctor_availability'),
         where('doctorId', '==', selectedDoctorId)
       );
-
-      const existingScheduleSnapshot = await getDocs(
-        existingScheduleQuery
-      );
+      const existingSnapshot = await getDocs(existingQuery);
 
       const batch = writeBatch(db);
 
-      existingScheduleSnapshot.docs.forEach(
-        (existingDocument) => {
-          batch.delete(existingDocument.ref);
-        }
-      );
+      // Clean existing records in atomic batch
+      existingSnapshot.docs.forEach((d) => {
+        batch.delete(d.ref);
+      });
 
-      await batch.commit();
-
-      /*
-      |--------------------------------------------------------------------------
-      | SAVE NEW SCHEDULE
-      |--------------------------------------------------------------------------
-      */
-
-      const scheduleData = {
+      const schedulePayload = {
         doctorId: selectedDoctorId,
-
         type: scheduleType,
-
         startTime: availability.startTime,
-
         endTime: availability.endTime,
-
         updatedAt: serverTimestamp(),
-
         ...(scheduleType === 'custom'
-          ? {
-              customDates: availability.customDates,
-            }
+          ? { customDates: availability.customDates }
           : {
               startDate: availability.startDate,
               endDate: availability.endDate,
             }),
       };
 
-      await addDoc(
-        collection(db, 'doctor_availability'),
-        scheduleData
-      );
+      const newDocRef = doc(collection(db, 'doctor_availability'));
+      batch.set(newDocRef, schedulePayload);
 
-      showMessage(
-        'success',
-        'Doctor availability updated successfully!'
-      );
+      await batch.commit();
+
+      showMessage('success', 'Doctor consultation hours updated successfully!');
     } catch (error) {
-      console.error(
-        'Error saving availability:',
-        error
-      );
-
-      showMessage(
-        'error',
-        'Failed to save doctor availability.'
-      );
+      console.error('Error saving availability:', error);
+      showMessage('error', 'Failed to update schedule in database.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | SAVE BLOCK / OT
-  |--------------------------------------------------------------------------
-  */
-
-  const handleSaveBlock = async (event) => {
-    event.preventDefault();
+  // ---------------------------------------------------
+  // SAVE BLOCK / OT LEAVE
+  // ---------------------------------------------------
+  const handleSaveBlock = async (e) => {
+    e.preventDefault();
 
     if (!selectedDoctorId) {
-      showMessage(
-        'error',
-        'Please select a doctor first.'
-      );
-
+      showMessage('error', 'Please select a doctor first.');
       return;
     }
 
-    if (
-      !newBlock.date ||
-      !newBlock.startTime ||
-      !newBlock.endTime
-    ) {
-      showMessage(
-        'error',
-        'Please complete all required block fields.'
-      );
-
+    if (!newBlock.date || !newBlock.startTime || !newBlock.endTime) {
+      showMessage('error', 'Complete all required block fields.');
       return;
     }
 
     if (newBlock.startTime >= newBlock.endTime) {
-      showMessage(
-        'error',
-        'Block Until must be later than Block From.'
-      );
-
+      showMessage('error', 'Block end time must be later than start time.');
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const blockData = {
+      const blockPayload = {
         ...newBlock,
-
         doctorId: selectedDoctorId,
-
         createdAt: serverTimestamp(),
       };
 
-      const blockDocument = await addDoc(
-        collection(db, 'doctor_blocks'),
-        blockData
-      );
+      const docRef = await addDoc(collection(db, 'doctor_blocks'), blockPayload);
 
-      const savedBlock = {
-        id: blockDocument.id,
-        ...blockData,
+      const saved = {
+        id: docRef.id,
+        ...blockPayload,
       };
 
-      setBlocks((previous) =>
-        [...previous, savedBlock].sort((a, b) =>
-          (a.date || '').localeCompare(b.date || '')
-        )
+      setBlocks((prev) =>
+        [...prev, saved].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
       );
 
       setNewBlock({
@@ -573,220 +353,129 @@ const DoctorAvailabilityAdmin = () => {
         notifyDoctor: true,
       });
 
-      showMessage(
-        'success',
-        'Calendar slot blocked successfully!'
-      );
+      showMessage('success', 'Time slot blocked successfully.');
     } catch (error) {
-      console.error(
-        'Error saving doctor block:',
-        error
-      );
-
-      showMessage(
-        'error',
-        'Failed to block calendar slot.'
-      );
+      console.error('Error saving block:', error);
+      showMessage('error', 'Failed to save blocked time slot.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | DELETE BLOCK
-  |--------------------------------------------------------------------------
-  */
-
+  // ---------------------------------------------------
+  // DELETE BLOCK (OPTIMISTIC)
+  // ---------------------------------------------------
   const handleDeleteBlock = async (blockId) => {
-    if (
-      !window.confirm(
-        'Are you sure you want to remove this blocked time?'
-      )
-    ) {
-      return;
-    }
+    if (!window.confirm('Remove this blocked time slot?')) return;
+
+    const rollback = [...blocks];
+    setBlocks((prev) => prev.filter((b) => b.id !== blockId));
 
     try {
-      await deleteDoc(
-        doc(db, 'doctor_blocks', blockId)
-      );
-
-      setBlocks((previous) =>
-        previous.filter(
-          (block) => block.id !== blockId
-        )
-      );
-
-      showMessage(
-        'success',
-        'Blocked time removed successfully.'
-      );
+      await deleteDoc(doc(db, 'doctor_blocks', blockId));
+      showMessage('success', 'Blocked time removed.');
     } catch (error) {
-      console.error(
-        'Error deleting block:',
-        error
-      );
-
-      showMessage(
-        'error',
-        'Failed to remove blocked time.'
-      );
+      console.error('Error deleting block:', error);
+      setBlocks(rollback);
+      showMessage('error', 'Failed to remove block. Reverted.');
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | SELECT EXISTING DOCTOR AS WEEKLY SPECIALIST
-  |--------------------------------------------------------------------------
-  */
+  // ---------------------------------------------------
+  // SPECIALIST FORM DOCTOR PICKER
+  // ---------------------------------------------------
+  const handleSpecialistDoctorSelection = (doctorId) => {
+    const selected = doctors.find((d) => d.id === doctorId);
 
-  const handleSpecialistDoctorSelection = (
-    doctorId
-  ) => {
-    const selectedDoctor = doctors.find(
-      (doctorItem) =>
-        doctorItem.id === doctorId
-    );
-
-    if (!selectedDoctor) {
-      setSpecialistForm((previous) => ({
-        ...previous,
-
+    if (!selected) {
+      setSpecialistForm((prev) => ({
+        ...prev,
         doctorId: '',
-
         doctorName: '',
-
         specialty: '',
-
         photoURL: '',
       }));
-
       return;
     }
 
-    setSpecialistForm((previous) => ({
-      ...previous,
-
-      doctorId: selectedDoctor.id,
-
-      doctorName: selectedDoctor.name || '',
-
-      specialty: selectedDoctor.specialty || '',
-
-      photoURL: selectedDoctor.photoURL || '',
+    setSpecialistForm((prev) => ({
+      ...prev,
+      doctorId: selected.id,
+      doctorName: selected.name || '',
+      specialty: selected.specialty || selected.department || '',
+      photoURL: selected.photoURL || '',
     }));
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | SAVE WEEKLY SPECIALIST
-  |--------------------------------------------------------------------------
-  */
-
-  const handleSaveSpecialist = async (
-    event
-  ) => {
-    event.preventDefault();
+  // ---------------------------------------------------
+  // SAVE WEEKLY SPECIALIST
+  // ---------------------------------------------------
+  const handleSaveSpecialist = async (e) => {
+    e.preventDefault();
 
     if (!specialistForm.doctorName.trim()) {
-      showMessage(
-        'error',
-        'Please select or enter the specialist.'
-      );
-
+      showMessage('error', 'Please enter or select the doctor name.');
       return;
     }
 
     if (!specialistForm.expertise.trim()) {
-      showMessage(
-        'error',
-        'Please enter the specialist expertise.'
-      );
-
+      showMessage('error', 'Please provide clinical expertise description.');
       return;
     }
 
-    if (
-      !specialistForm.startTime ||
-      !specialistForm.endTime
-    ) {
-      showMessage(
-        'error',
-        'Please select specialist consultation hours.'
-      );
-
+    if (!specialistForm.startTime || !specialistForm.endTime) {
+      showMessage('error', 'Please choose consultation timings.');
       return;
     }
 
-    if (
-      specialistForm.startTime >=
-      specialistForm.endTime
-    ) {
-      showMessage(
-        'error',
-        'Consultation end time must be later than start time.'
-      );
-
+    if (specialistForm.startTime >= specialistForm.endTime) {
+      showMessage('error', 'End time must be later than start time.');
       return;
     }
 
     if (
       specialistForm.startDate &&
       specialistForm.endDate &&
-      specialistForm.startDate >
-        specialistForm.endDate
+      specialistForm.startDate > specialistForm.endDate
     ) {
-      showMessage(
-        'error',
-        'Effective end date cannot be earlier than start date.'
-      );
-
+      showMessage('error', 'End date cannot be earlier than start date.');
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const specialistData = {
-        doctorId:
-          specialistForm.doctorId || '',
-
-        doctorName:
-          specialistForm.doctorName.trim(),
-
-        specialty:
-          specialistForm.specialty.trim(),
-
-        expertise:
-          specialistForm.expertise.trim(),
-
+      const specialistPayload = {
+        doctorId: specialistForm.doctorId || '',
+        doctorName: specialistForm.doctorName.trim(),
+        specialty: specialistForm.specialty.trim(),
+        expertise: specialistForm.expertise.trim(),
         day: specialistForm.day,
-
-        startTime:
-          specialistForm.startTime,
-
-        endTime:
-          specialistForm.endTime,
-
-        startDate:
-          specialistForm.startDate,
-
-        endDate:
-          specialistForm.endDate,
-
-        photoURL:
-          specialistForm.photoURL || '',
-
+        startTime: specialistForm.startTime,
+        endTime: specialistForm.endTime,
+        startDate: specialistForm.startDate,
+        endDate: specialistForm.endDate,
+        photoURL: specialistForm.photoURL || '',
         createdAt: serverTimestamp(),
-
         updatedAt: serverTimestamp(),
       };
 
-      await addDoc(
+      const docRef = await addDoc(
         collection(db, 'weekly_specialists'),
-        specialistData
+        specialistPayload
       );
+
+      const saved = { id: docRef.id, ...specialistPayload };
+
+      setWeeklySpecialists((prev) => {
+        const updated = [...prev, saved];
+        return updated.sort((a, b) => {
+          const first = DAY_ORDER[a.day] || 99;
+          const second = DAY_ORDER[b.day] || 99;
+          if (first !== second) return first - second;
+          return (a.startTime || '').localeCompare(b.startTime || '');
+        });
+      });
 
       setSpecialistForm({
         doctorId: '',
@@ -801,1357 +490,785 @@ const DoctorAvailabilityAdmin = () => {
         photoURL: '',
       });
 
-      await fetchWeeklySpecialists();
-
-      showMessage(
-        'success',
-        'Weekly specialist added successfully!'
-      );
+      showMessage('success', 'Visiting specialist registered successfully!');
     } catch (error) {
-      console.error(
-        'Error saving weekly specialist:',
-        error
-      );
-
-      showMessage(
-        'error',
-        'Failed to add weekly specialist.'
-      );
+      console.error('Error saving specialist:', error);
+      showMessage('error', 'Failed to register weekly specialist.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | DELETE WEEKLY SPECIALIST
-  |--------------------------------------------------------------------------
-  */
+  // ---------------------------------------------------
+  // DELETE WEEKLY SPECIALIST
+  // ---------------------------------------------------
+  const handleDeleteSpecialist = async (specialistId) => {
+    if (!window.confirm('Remove this specialist schedule?')) return;
 
-  const handleDeleteSpecialist = async (
-    specialistId
-  ) => {
-    if (
-      !window.confirm(
-        'Are you sure you want to remove this weekly specialist schedule?'
-      )
-    ) {
-      return;
-    }
+    const rollback = [...weeklySpecialists];
+    setWeeklySpecialists((prev) => prev.filter((s) => s.id !== specialistId));
 
     try {
-      await deleteDoc(
-        doc(
-          db,
-          'weekly_specialists',
-          specialistId
-        )
-      );
-
-      setWeeklySpecialists((previous) =>
-        previous.filter(
-          (specialist) =>
-            specialist.id !== specialistId
-        )
-      );
-
-      showMessage(
-        'success',
-        'Weekly specialist removed successfully.'
-      );
+      await deleteDoc(doc(db, 'weekly_specialists', specialistId));
+      showMessage('success', 'Specialist schedule removed.');
     } catch (error) {
-      console.error(
-        'Error deleting weekly specialist:',
-        error
-      );
-
-      showMessage(
-        'error',
-        'Failed to remove weekly specialist.'
-      );
+      console.error('Error deleting specialist:', error);
+      setWeeklySpecialists(rollback);
+      showMessage('error', 'Failed to remove specialist.');
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOADING SCREEN
-  |--------------------------------------------------------------------------
-  */
-
   if (loading) {
     return (
-      <div className="p-6 lg:p-8 font-sans">
-
-        <div className="min-h-[500px] bg-white rounded-[2rem] border border-slate-200 shadow-sm flex flex-col items-center justify-center">
-
-          <Loader2 className="w-10 h-10 animate-spin text-[#0EA5E9] mb-4" />
-
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
-            Loading Doctor Schedules...
-          </p>
-
-        </div>
-
+      <div className="min-h-[450px] bg-white rounded-3xl border border-slate-200/90 shadow-xs flex flex-col items-center justify-center p-8">
+        <Loader2 className="w-9 h-9 animate-spin text-[#1f9b90] mb-3" />
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+          Loading Timetables & Schedules...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8 font-sans text-slate-800">
-
-      {/* ================================================================ */}
-      {/* HEADER                                                           */}
-      {/* ================================================================ */}
-
-      <div className="mb-8">
-
-        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3 mb-2">
-
-          <CalendarDays className="w-8 h-8 text-[#0EA5E9]" />
-
-          Doctor Availability & Timetable
-
-        </h1>
-
-        <p className="text-slate-500 font-medium">
-          Manage regular schedules, calendar blocks, OT,
-          leaves and weekly specialist consultations.
-        </p>
-
-      </div>
-
-      {/* ================================================================ */}
-      {/* MESSAGE                                                           */}
-      {/* ================================================================ */}
-
+    <div className="font-sans text-slate-800 space-y-6">
+      
+      {/* ===================================================
+          FEEDBACK TOAST
+      =================================================== */}
       <AnimatePresence>
-
         {message.text && (
-
           <motion.div
-            initial={{
-              opacity: 0,
-              y: -10,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              y: -10,
-            }}
-            className={`mb-6 p-4 rounded-xl flex items-center gap-3 font-bold text-sm ${
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className={`p-3.5 rounded-2xl flex items-center justify-between text-xs sm:text-sm font-semibold border shadow-2xs ${
               message.type === 'error'
-                ? 'bg-red-50 text-red-600 border border-red-100'
-                : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                ? 'bg-red-50 text-red-800 border-red-200'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
             }`}
           >
-
-            {message.type === 'error' ? (
-              <AlertCircle className="w-5 h-5" />
-            ) : (
-              <CheckCircle2 className="w-5 h-5" />
-            )}
-
-            {message.text}
-
+            <div className="flex items-center gap-2">
+              {message.type === 'error' ? (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              )}
+              <span>{message.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMessage({ type: '', text: '' })}
+              className="text-slate-400 hover:text-slate-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </motion.div>
-
         )}
-
       </AnimatePresence>
 
-      {/* ================================================================ */}
-      {/* MAIN CONTAINER                                                    */}
-      {/* ================================================================ */}
+      {/* ===================================================
+          MAIN CARD WORKBENCH
+      =================================================== */}
+      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col lg:flex-row items-stretch">
+        
+        {/* ===============================================
+            LEFT PANEL: DOCTOR SELECTOR & ACTION NAV (1/3)
+        =============================================== */}
+        <div className="w-full lg:w-1/3 bg-slate-50/70 p-5 sm:p-7 border-b lg:border-b-0 lg:border-r border-slate-200 space-y-6">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              Select Physician
+            </label>
+            <div className="relative">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <select
+                value={selectedDoctorId}
+                onChange={(e) => setSelectedDoctorId(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-[#1f9b90] shadow-2xs cursor-pointer appearance-none"
+              >
+                <option value="">-- Choose Doctor from Directory --</option>
+                {doctors.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} {d.specialty || d.department ? `(${d.specialty || d.department})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-      <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row">
-
-        {/* ================================================================ */}
-        {/* LEFT PANEL                                                       */}
-        {/* ================================================================ */}
-
-        <div className="w-full lg:w-1/3 bg-slate-50 p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-slate-200">
-
-          <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-widest">
-            Select Doctor
-          </label>
-
-          <div className="relative mb-8">
-
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-
-            <select
-              value={selectedDoctorId}
-              onChange={(event) =>
-                setSelectedDoctorId(
-                  event.target.value
-                )
-              }
-              className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] shadow-sm appearance-none cursor-pointer"
-            >
-
-              <option value="">
-                -- Choose a Doctor --
-              </option>
-
-              {doctors.map((doctorItem) => (
-
-                <option
-                  key={doctorItem.id}
-                  value={doctorItem.id}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+              Schedule Action
+            </label>
+            <div className="flex flex-col gap-2">
+              {/* TAB 1: SCHEDULE */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('schedule')}
+                className={[
+                  "p-3.5 rounded-2xl flex items-center gap-3.5 text-left transition-all border",
+                  activeTab === 'schedule'
+                    ? "bg-white border-[#1f9b90] shadow-sm ring-1 ring-[#1f9b90]/20"
+                    : "bg-white/60 border-slate-200 hover:bg-white hover:border-slate-300",
+                ].join(" ")}
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    activeTab === 'schedule'
+                      ? 'bg-teal-50 text-[#1f9b90]'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
                 >
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-[#1a365d]">
+                    Set Working Hours
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Regular weekly OPD consultation slots
+                  </p>
+                </div>
+              </button>
 
-                  {doctorItem.name}
+              {/* TAB 2: BLOCK / OT */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('block')}
+                className={[
+                  "p-3.5 rounded-2xl flex items-center gap-3.5 text-left transition-all border",
+                  activeTab === 'block'
+                    ? "bg-white border-[#f6ac42] shadow-sm ring-1 ring-[#f6ac42]/20"
+                    : "bg-white/60 border-slate-200 hover:bg-white hover:border-slate-300",
+                ].join(" ")}
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    activeTab === 'block'
+                      ? 'bg-amber-50 text-[#f6ac42]'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  <Ban className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-[#1a365d]">
+                    Block Time / OT Leave
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Emergency surgeries, leaves & exceptions
+                  </p>
+                </div>
+              </button>
 
-                  {doctorItem.specialty
-                    ? ` (${doctorItem.specialty})`
-                    : ''}
-
-                </option>
-
-              ))}
-
-            </select>
-
+              {/* TAB 3: WEEKLY SPECIALIST */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('specialist')}
+                className={[
+                  "p-3.5 rounded-2xl flex items-center gap-3.5 text-left transition-all border",
+                  activeTab === 'specialist'
+                    ? "bg-white border-[#1a365d] shadow-sm ring-1 ring-[#1a365d]/20"
+                    : "bg-white/60 border-slate-200 hover:bg-white hover:border-slate-300",
+                ].join(" ")}
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    activeTab === 'specialist'
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xs sm:text-sm text-[#1a365d]">
+                    Visiting Specialists
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Weekly super-specialist clinics
+                  </p>
+                </div>
+              </button>
+            </div>
           </div>
-
-          <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-widest">
-            Select Action
-          </label>
-
-          <div className="flex flex-col gap-3">
-
-            {/* REGULAR SCHEDULE */}
-
-            <button
-              onClick={() =>
-                setActiveTab('schedule')
-              }
-              className={`p-4 rounded-xl flex items-center gap-4 text-left transition-all ${
-                activeTab === 'schedule'
-                  ? 'bg-white border-2 border-[#0EA5E9] shadow-md'
-                  : 'border-2 border-transparent hover:bg-white hover:border-slate-200'
-              }`}
-            >
-
-              <div className="w-10 h-10 rounded-lg bg-sky-50 flex items-center justify-center shrink-0">
-
-                <Clock className="w-5 h-5 text-[#0EA5E9]" />
-
-              </div>
-
-              <div>
-
-                <h4 className="font-bold text-slate-700">
-                  Set Schedule
-                </h4>
-
-                <p className="text-xs text-slate-500 font-medium">
-                  Regular working hours
-                </p>
-
-              </div>
-
-            </button>
-
-            {/* BLOCK */}
-
-            <button
-              onClick={() =>
-                setActiveTab('block')
-              }
-              className={`p-4 rounded-xl flex items-center gap-4 text-left transition-all ${
-                activeTab === 'block'
-                  ? 'bg-white border-2 border-[#C19B6C] shadow-md'
-                  : 'border-2 border-transparent hover:bg-white hover:border-slate-200'
-              }`}
-            >
-
-              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
-
-                <Ban className="w-5 h-5 text-[#C19B6C]" />
-
-              </div>
-
-              <div>
-
-                <h4 className="font-bold text-slate-700">
-                  Block Time / OT
-                </h4>
-
-                <p className="text-xs text-slate-500 font-medium">
-                  Surgeries, leaves and exceptions
-                </p>
-
-              </div>
-
-            </button>
-
-            {/* WEEKLY SPECIALIST */}
-
-            <button
-              onClick={() =>
-                setActiveTab('specialist')
-              }
-              className={`p-4 rounded-xl flex items-center gap-4 text-left transition-all ${
-                activeTab === 'specialist'
-                  ? 'bg-white border-2 border-emerald-500 shadow-md'
-                  : 'border-2 border-transparent hover:bg-white hover:border-slate-200'
-              }`}
-            >
-
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
-
-                <Star className="w-5 h-5 text-emerald-600" />
-
-              </div>
-
-              <div>
-
-                <h4 className="font-bold text-slate-700">
-                  Weekly Specialists
-                </h4>
-
-                <p className="text-xs text-slate-500 font-medium">
-                  Visiting specialist schedules
-                </p>
-
-              </div>
-
-            </button>
-
-          </div>
-
         </div>
 
-        {/* ================================================================ */}
-        {/* RIGHT PANEL                                                      */}
-        {/* ================================================================ */}
-
-        <div className="w-full lg:w-2/3 p-6 lg:p-8 min-h-[600px]">
-
-          {/* ================================================================ */}
-          {/* REGULAR SCHEDULE                                                 */}
-          {/* ================================================================ */}
-
+        {/* ===============================================
+            RIGHT PANEL: TAB WORKSPACE (2/3)
+        =============================================== */}
+        <div className="w-full lg:w-2/3 p-5 sm:p-7 min-h-[550px]">
+          
+          {/* ===========================================
+              TAB 1: REGULAR SCHEDULE
+          =========================================== */}
           {activeTab === 'schedule' && (
-
             <motion.div
-              initial={{
-                opacity: 0,
-                x: 20,
-              }}
-              animate={{
-                opacity: 1,
-                x: 0,
-              }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
             >
-
-              {!selectedDoctorId && (
-
-                <div className="mb-6 p-4 bg-sky-50 border border-sky-100 rounded-xl flex items-center gap-3 text-sky-700 font-bold text-sm">
-
-                  <Stethoscope className="w-5 h-5" />
-
-                  Select a doctor before saving availability.
-
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+                <div>
+                  <h2 className="text-lg font-bold text-[#1a365d]">
+                    Configure Regular Consultation Hours
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Define active OPD working hours shown on public booking channels.
+                  </p>
                 </div>
 
-              )}
-
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 border-b border-slate-100 pb-4">
-                Regular Availability
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-
-                {[
-                  'week',
-                  'weekend',
-                  'custom',
-                ].map((type) => (
-
-                  <button
-                    key={type}
-                    onClick={() =>
-                      setScheduleType(type)
-                    }
-                    className={`py-2.5 px-4 rounded-xl text-sm font-bold capitalize transition-colors border ${
-                      scheduleType === type
-                        ? 'bg-[#0EA5E9] text-white border-[#0EA5E9]'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-
-                    {type === 'week'
-                      ? 'Whole Week'
-                      : type === 'weekend'
-                      ? 'Weekends Only'
-                      : 'Custom Dates'}
-
-                  </button>
-
-                ))}
-
+                {!selectedDoctorId && (
+                  <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+                    Select a doctor on left
+                  </span>
+                )}
               </div>
 
-              {scheduleType !== 'custom' ? (
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-
-                  <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Start Date
-                    </label>
-
-                    <input
-                      type="date"
-                      value={
-                        availability.startDate
-                      }
-                      onChange={(event) =>
-                        setAvailability({
-                          ...availability,
-                          startDate:
-                            event.target.value,
-                        })
-                      }
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#0EA5E9] font-medium"
-                    />
-
-                  </div>
-
-                  <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      End Date
-                    </label>
-
-                    <input
-                      type="date"
-                      value={
-                        availability.endDate
-                      }
-                      onChange={(event) =>
-                        setAvailability({
-                          ...availability,
-                          endDate:
-                            event.target.value,
-                        })
-                      }
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#0EA5E9] font-medium"
-                    />
-
-                  </div>
-
+              {/* Schedule Type Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                  Repeat Schedule Type
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'week', label: 'All Week (Mon-Sat)' },
+                    { id: 'weekend', label: 'Weekends Only' },
+                    { id: 'custom', label: 'Custom Specific Dates' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setScheduleType(item.id)}
+                      className={[
+                        "py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center",
+                        scheduleType === item.id
+                          ? "bg-[#1a365d] text-white border-[#1a365d] shadow-2xs"
+                          : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-white",
+                      ].join(" ")}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
+              {/* Date Pickers */}
+              {scheduleType !== 'custom' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                      Effective Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={availability.startDate}
+                      onChange={(e) =>
+                        setAvailability((prev) => ({ ...prev, startDate: e.target.value }))
+                      }
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium outline-none focus:border-[#1f9b90]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                      Effective End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={availability.endDate}
+                      onChange={(e) =>
+                        setAvailability((prev) => ({ ...prev, endDate: e.target.value }))
+                      }
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium outline-none focus:border-[#1f9b90]"
+                    />
+                  </div>
+                </div>
               ) : (
-
-                <div className="mb-6">
-
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Select Multiple Dates
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    Add Specific Custom Dates
                   </label>
-
                   <div className="flex gap-2">
-
                     <input
                       type="date"
                       value={tempDate}
-                      onChange={(event) =>
-                        setTempDate(
-                          event.target.value
-                        )
-                      }
-                      className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#0EA5E9] font-medium"
+                      onChange={(e) => setTempDate(e.target.value)}
+                      className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-[#1f9b90]"
                     />
-
                     <button
                       type="button"
-                      onClick={
-                        handleAddCustomDate
-                      }
-                      className="bg-[#0EA5E9] text-white px-5 rounded-xl font-bold hover:bg-sky-600"
+                      onClick={handleAddCustomDate}
+                      className="rounded-xl bg-[#1f9b90] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#188077]"
                     >
-                      Add
+                      Add Date
                     </button>
-
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mt-3">
-
-                    {availability.customDates.map(
-                      (dateValue) => (
-
-                        <span
-                          key={dateValue}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-[#0EA5E9] text-sm font-bold rounded-lg border border-sky-100"
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {availability.customDates.map((d) => (
+                      <span
+                        key={d}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-50 text-[#1a365d] text-xs font-bold rounded-lg border border-teal-200/60"
+                      >
+                        <span>{d}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeCustomDate(d)}
+                          className="text-slate-400 hover:text-red-500"
                         >
-
-                          {dateValue}
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeCustomDate(
-                                dateValue
-                              )
-                            }
-                          >
-
-                            <X className="w-3.5 h-3.5 hover:text-red-500" />
-
-                          </button>
-
-                        </span>
-
-                      )
-                    )}
-
-                    {availability.customDates
-                      .length === 0 && (
-
-                      <span className="text-sm text-slate-400 italic">
-                        No dates selected.
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </span>
-
+                    ))}
+                    {availability.customDates.length === 0 && (
+                      <span className="text-xs text-slate-400 italic">No custom dates added yet.</span>
                     )}
-
                   </div>
-
                 </div>
-
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-
+              {/* Consultation Timings */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Available From
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                    Consultation Starts From
                   </label>
-
                   <input
                     type="time"
-                    value={
-                      availability.startTime
+                    value={availability.startTime}
+                    onChange={(e) =>
+                      setAvailability((prev) => ({ ...prev, startTime: e.target.value }))
                     }
-                    onChange={(event) =>
-                      setAvailability({
-                        ...availability,
-                        startTime:
-                          event.target.value,
-                      })
-                    }
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#0EA5E9] font-medium"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-[#1f9b90]"
                   />
-
                 </div>
 
                 <div>
-
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                    Available Until
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                    Consultation Closes At
                   </label>
-
                   <input
                     type="time"
-                    value={
-                      availability.endTime
+                    value={availability.endTime}
+                    onChange={(e) =>
+                      setAvailability((prev) => ({ ...prev, endTime: e.target.value }))
                     }
-                    onChange={(event) =>
-                      setAvailability({
-                        ...availability,
-                        endTime:
-                          event.target.value,
-                      })
-                    }
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#0EA5E9] font-medium"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-[#1f9b90]"
                   />
-
                 </div>
-
               </div>
 
+              {/* Submit Button */}
               <button
                 type="button"
-                onClick={
-                  handleSaveAvailability
-                }
-                disabled={
-                  submitting ||
-                  !selectedDoctorId
-                }
-                className="w-full bg-[#0EA5E9] hover:bg-sky-500 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-lg shadow-sky-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSaveAvailability}
+                disabled={submitting || !selectedDoctorId}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1a365d] to-[#1f9b90] py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-slate-900/10 hover:opacity-95 active:scale-[0.99] disabled:opacity-50"
               >
-
                 {submitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Committing Schedule...</span>
+                  </>
                 ) : (
-                  <Calendar className="w-5 h-5" />
+                  <>
+                    <Calendar className="w-4 h-4" />
+                    <span>Save Consultation Hours</span>
+                  </>
                 )}
-
-                Update Availability
-
               </button>
-
             </motion.div>
-
           )}
 
-          {/* ================================================================ */}
-          {/* BLOCK TIME / OT                                                  */}
-          {/* ================================================================ */}
-
+          {/* ===========================================
+              TAB 2: BLOCK TIME / OT / LEAVE
+          =========================================== */}
           {activeTab === 'block' && (
-
             <motion.div
-              initial={{
-                opacity: 0,
-                x: 20,
-              }}
-              animate={{
-                opacity: 1,
-                x: 0,
-              }}
-              className="flex flex-col xl:flex-row gap-8"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start"
             >
+              {/* Block Form */}
+              <div className="space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="text-base font-bold text-[#1a365d]">
+                    Add Schedule Exception / OT
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Blocks booking slots for emergencies or leaves.
+                  </p>
+                </div>
 
-              <div className="flex-1">
-
-                <h2 className="text-2xl font-bold text-slate-900 mb-6 border-b border-slate-100 pb-4">
-                  Add Exception / Block
-                </h2>
-
-                <form
-                  onSubmit={handleSaveBlock}
-                  className="space-y-4"
-                >
-
+                <form onSubmit={handleSaveBlock} className="space-y-3.5">
                   <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Title / Reason
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Reason / Title *
                     </label>
-
                     <input
                       required
                       type="text"
                       value={newBlock.title}
-                      onChange={(event) =>
-                        setNewBlock({
-                          ...newBlock,
-                          title:
-                            event.target.value,
-                        })
-                      }
-                      placeholder="Surgery, OT, Leave..."
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#C19B6C] font-medium"
+                      onChange={(e) => setNewBlock((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g. Emergency OT Surgery, Conference, Leave"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-[#f6ac42]"
                     />
-
                   </div>
 
                   <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Date
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Date *
                     </label>
-
                     <input
                       required
                       type="date"
                       value={newBlock.date}
-                      onChange={(event) =>
-                        setNewBlock({
-                          ...newBlock,
-                          date:
-                            event.target.value,
-                        })
-                      }
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#C19B6C] font-medium"
+                      onChange={(e) => setNewBlock((prev) => ({ ...prev, date: e.target.value }))}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-[#f6ac42]"
                     />
-
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-
-                    <input
-                      required
-                      type="time"
-                      value={
-                        newBlock.startTime
-                      }
-                      onChange={(event) =>
-                        setNewBlock({
-                          ...newBlock,
-                          startTime:
-                            event.target.value,
-                        })
-                      }
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
-                    />
-
-                    <input
-                      required
-                      type="time"
-                      value={
-                        newBlock.endTime
-                      }
-                      onChange={(event) =>
-                        setNewBlock({
-                          ...newBlock,
-                          endTime:
-                            event.target.value,
-                        })
-                      }
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
-                    />
-
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Block Starts
+                      </label>
+                      <input
+                        required
+                        type="time"
+                        value={newBlock.startTime}
+                        onChange={(e) =>
+                          setNewBlock((prev) => ({ ...prev, startTime: e.target.value }))
+                        }
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Block Ends
+                      </label>
+                      <input
+                        required
+                        type="time"
+                        value={newBlock.endTime}
+                        onChange={(e) =>
+                          setNewBlock((prev) => ({ ...prev, endTime: e.target.value }))
+                        }
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"
+                      />
+                    </div>
                   </div>
 
-                  <textarea
-                    rows="3"
-                    value={newBlock.details}
-                    onChange={(event) =>
-                      setNewBlock({
-                        ...newBlock,
-                        details:
-                          event.target.value,
-                      })
-                    }
-                    placeholder="Optional details..."
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl resize-none"
-                  />
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Internal Details (Optional)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={newBlock.details}
+                      onChange={(e) =>
+                        setNewBlock((prev) => ({ ...prev, details: e.target.value }))
+                      }
+                      placeholder="Additional notes for reception staff..."
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none resize-none"
+                    />
+                  </div>
 
-                  <label className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-xl cursor-pointer">
-
+                  <label className="flex items-center gap-2 p-2.5 bg-amber-50/70 border border-amber-200/60 rounded-xl cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={
-                        newBlock.notifyDoctor
+                      checked={newBlock.notifyDoctor}
+                      onChange={(e) =>
+                        setNewBlock((prev) => ({ ...prev, notifyDoctor: e.target.checked }))
                       }
-                      onChange={(event) =>
-                        setNewBlock({
-                          ...newBlock,
-                          notifyDoctor:
-                            event.target.checked,
-                        })
-                      }
+                      className="w-4 h-4 text-[#f6ac42] rounded border-slate-300 focus:ring-[#f6ac42]"
                     />
-
-                    <Bell className="w-4 h-4 text-[#C19B6C]" />
-
-                    <span className="text-sm font-bold">
-                      Notify Doctor
+                    <Bell className="w-3.5 h-3.5 text-[#f6ac42]" />
+                    <span className="text-xs font-bold text-slate-800">
+                      Send reminder to doctor's calendar
                     </span>
-
                   </label>
 
                   <button
                     type="submit"
-                    disabled={
-                      submitting ||
-                      !selectedDoctorId
-                    }
-                    className="w-full bg-[#C19B6C] hover:bg-amber-600 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 disabled:opacity-50"
+                    disabled={submitting || !selectedDoctorId}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#f6ac42] hover:bg-amber-500 text-slate-950 font-bold py-2.5 text-xs uppercase tracking-wider shadow-sm disabled:opacity-50"
                   >
-
                     {submitting ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Scissors className="w-5 h-5" />
+                      <Scissors className="w-4 h-4" />
                     )}
-
-                    Block Calendar Slot
-
+                    <span>Block Calendar Slot</span>
                   </button>
-
                 </form>
-
               </div>
 
-              <div className="flex-1 xl:border-l xl:border-slate-100 xl:pl-8">
+              {/* Block List */}
+              <div className="space-y-3 xl:border-l xl:border-slate-100 xl:pl-6">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Configured Blocks ({blocks.length})
+                </h4>
 
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">
-                  Doctor Blocks
-                </h3>
-
-                <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
-
+                <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
                   {blocks.length === 0 ? (
-
-                    <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl">
-
-                      <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-
-                      <p className="text-sm text-slate-500 font-medium">
-                        No blocks configured.
-                      </p>
-
+                    <div className="py-14 text-center border border-dashed border-slate-200 rounded-2xl">
+                      <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-xs text-slate-400">No active exceptions configured.</p>
                     </div>
-
                   ) : (
-
                     blocks.map((block) => (
-
                       <div
                         key={block.id}
-                        className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex gap-4"
+                        className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50/60 text-xs"
                       >
-
-                        <div className="flex-1">
-
-                          <h4 className="font-bold text-slate-900">
-                            {block.title}
-                          </h4>
-
-                          <p className="text-xs text-slate-500 mt-1">
-                            {block.date}
+                        <div className="min-w-0 pr-2">
+                          <p className="font-bold text-[#1a365d] truncate">{block.title}</p>
+                          <p className="text-[11px] text-slate-500">{block.date}</p>
+                          <p className="text-[11px] font-semibold text-[#f6ac42]">
+                            {block.startTime} – {block.endTime}
                           </p>
-
-                          <p className="text-xs font-bold text-[#C19B6C] mt-1">
-                            {block.startTime} -{' '}
-                            {block.endTime}
-                          </p>
-
                         </div>
-
                         <button
                           type="button"
-                          onClick={() =>
-                            handleDeleteBlock(
-                              block.id
-                            )
-                          }
-                          className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => handleDeleteBlock(block.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0"
                         >
-
                           <Trash2 className="w-4 h-4" />
-
                         </button>
-
                       </div>
-
                     ))
-
                   )}
-
                 </div>
-
               </div>
-
             </motion.div>
-
           )}
 
-          {/* ================================================================ */}
-          {/* WEEKLY SPECIALISTS                                               */}
-          {/* ================================================================ */}
-
+          {/* ===========================================
+              TAB 3: WEEKLY SPECIALIST
+          =========================================== */}
           {activeTab === 'specialist' && (
-
             <motion.div
-              initial={{
-                opacity: 0,
-                x: 20,
-              }}
-              animate={{
-                opacity: 1,
-                x: 0,
-              }}
-              className="flex flex-col xl:flex-row gap-8"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start"
             >
-
-              {/* FORM */}
-
-              <div className="flex-1">
-
-                <div className="mb-6 border-b border-slate-100 pb-4">
-
-                  <h2 className="text-2xl font-bold text-slate-900">
-                    Add Weekly Specialist
-                  </h2>
-
-                  <p className="text-sm text-slate-500 mt-1">
-                    Configure visiting specialists and their weekly consultation schedule.
+              {/* Form */}
+              <div className="space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="text-base font-bold text-[#1a365d]">
+                    Register Visiting Specialist
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Publishes weekly visiting consultants on hospital schedule.
                   </p>
-
                 </div>
 
-                <form
-                  onSubmit={
-                    handleSaveSpecialist
-                  }
-                  className="space-y-4"
-                >
-
+                <form onSubmit={handleSaveSpecialist} className="space-y-3.5">
                   <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Select Existing Doctor
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Choose from Doctors Directory
                     </label>
-
                     <select
-                      value={
-                        specialistForm.doctorId ||
-                        ''
-                      }
-                      onChange={(event) =>
-                        handleSpecialistDoctorSelection(
-                          event.target.value
-                        )
-                      }
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium"
+                      value={specialistForm.doctorId || ''}
+                      onChange={(e) => handleSpecialistDoctorSelection(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none"
                     >
-
-                      <option value="">
-                        Manual Specialist Entry
-                      </option>
-
-                      {doctors.map(
-                        (doctorItem) => (
-
-                          <option
-                            key={doctorItem.id}
-                            value={doctorItem.id}
-                          >
-
-                            {doctorItem.name}
-
-                            {doctorItem.specialty
-                              ? ` (${doctorItem.specialty})`
-                              : ''}
-
-                          </option>
-
-                        )
-                      )}
-
+                      <option value="">Manual Specialist Entry</option>
+                      {doctors.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} {d.specialty ? `(${d.specialty})` : ''}
+                        </option>
+                      ))}
                     </select>
-
                   </div>
 
                   <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Specialist Name
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Specialist Name *
                     </label>
-
                     <input
                       required
                       type="text"
-                      value={
-                        specialistForm.doctorName
+                      value={specialistForm.doctorName}
+                      onChange={(e) =>
+                        setSpecialistForm((prev) => ({ ...prev, doctorName: e.target.value }))
                       }
-                      onChange={(event) =>
-                        setSpecialistForm({
-                          ...specialistForm,
-                          doctorName:
-                            event.target.value,
-                        })
-                      }
-                      placeholder="Dr. Specialist Name"
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium"
+                      placeholder="e.g. Dr. K. N. Hegde"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none"
                     />
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Department
+                      </label>
+                      <input
+                        type="text"
+                        value={specialistForm.specialty}
+                        onChange={(e) =>
+                          setSpecialistForm((prev) => ({ ...prev, specialty: e.target.value }))
+                        }
+                        placeholder="e.g. Neurology"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Consultation Day *
+                      </label>
+                      <select
+                        value={specialistForm.day}
+                        onChange={(e) =>
+                          setSpecialistForm((prev) => ({ ...prev, day: e.target.value }))
+                        }
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                      >
+                        {Object.keys(DAY_ORDER).map((day) => (
+                          <option key={day} value={day}>{day}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Specialty
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                      Clinical Expertise Summary *
                     </label>
-
-                    <input
-                      type="text"
-                      value={
-                        specialistForm.specialty
-                      }
-                      onChange={(event) =>
-                        setSpecialistForm({
-                          ...specialistForm,
-                          specialty:
-                            event.target.value,
-                        })
-                      }
-                      placeholder="Cardiology, Neurology..."
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium"
-                    />
-
-                  </div>
-
-                  <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Expertise
-                    </label>
-
                     <textarea
                       required
-                      rows="3"
-                      value={
-                        specialistForm.expertise
+                      rows={2}
+                      value={specialistForm.expertise}
+                      onChange={(e) =>
+                        setSpecialistForm((prev) => ({ ...prev, expertise: e.target.value }))
                       }
-                      onChange={(event) =>
-                        setSpecialistForm({
-                          ...specialistForm,
-                          expertise:
-                            event.target.value,
-                        })
-                      }
-                      placeholder="Interventional Cardiology, Heart Failure Management..."
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-medium resize-none"
+                      placeholder="e.g. Stroke management, Neuro-rehabilitation..."
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none resize-none"
                     />
-
                   </div>
 
-                  <div>
-
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Consultation Day
-                    </label>
-
-                    <select
-                      value={specialistForm.day}
-                      onChange={(event) =>
-                        setSpecialistForm({
-                          ...specialistForm,
-                          day:
-                            event.target.value,
-                        })
-                      }
-                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 font-bold"
-                    >
-
-                      {[
-                        'Monday',
-                        'Tuesday',
-                        'Wednesday',
-                        'Thursday',
-                        'Friday',
-                        'Saturday',
-                        'Sunday',
-                      ].map((day) => (
-
-                        <option
-                          key={day}
-                          value={day}
-                        >
-                          {day}
-                        </option>
-
-                      ))}
-
-                    </select>
-
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                        Consultation From
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Visiting Starts
                       </label>
-
                       <input
                         required
                         type="time"
-                        value={
-                          specialistForm.startTime
+                        value={specialistForm.startTime}
+                        onChange={(e) =>
+                          setSpecialistForm((prev) => ({ ...prev, startTime: e.target.value }))
                         }
-                        onChange={(event) =>
-                          setSpecialistForm({
-                            ...specialistForm,
-                            startTime:
-                              event.target.value,
-                          })
-                        }
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                       />
-
                     </div>
-
                     <div>
-
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                        Consultation Until
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+                        Visiting Ends
                       </label>
-
                       <input
                         required
                         type="time"
-                        value={
-                          specialistForm.endTime
+                        value={specialistForm.endTime}
+                        onChange={(e) =>
+                          setSpecialistForm((prev) => ({ ...prev, endTime: e.target.value }))
                         }
-                        onChange={(event) =>
-                          setSpecialistForm({
-                            ...specialistForm,
-                            endTime:
-                              event.target.value,
-                          })
-                        }
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                       />
-
                     </div>
-
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                    <div>
-
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                        Effective Start Date
-                      </label>
-
-                      <input
-                        type="date"
-                        value={
-                          specialistForm.startDate
-                        }
-                        onChange={(event) =>
-                          setSpecialistForm({
-                            ...specialistForm,
-                            startDate:
-                              event.target.value,
-                          })
-                        }
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
-                      />
-
-                    </div>
-
-                    <div>
-
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                        Effective End Date
-                      </label>
-
-                      <input
-                        type="date"
-                        value={
-                          specialistForm.endDate
-                        }
-                        onChange={(event) =>
-                          setSpecialistForm({
-                            ...specialistForm,
-                            endDate:
-                              event.target.value,
-                          })
-                        }
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"
-                      />
-
-                    </div>
-
                   </div>
 
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-all disabled:opacity-50"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1a365d] to-[#1f9b90] text-white font-bold py-2.5 text-xs uppercase tracking-wider shadow-sm disabled:opacity-50"
                   >
-
                     {submitting ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Plus className="w-5 h-5" />
+                      <Plus className="w-4 h-4" />
                     )}
-
-                    Add Weekly Specialist
-
+                    <span>Publish Weekly Specialist</span>
                   </button>
-
                 </form>
-
               </div>
 
-              {/* SPECIALISTS LIST */}
+              {/* Specialist List */}
+              <div className="space-y-3 xl:border-l xl:border-slate-100 xl:pl-6">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Weekly Registry ({weeklySpecialists.length})
+                </h4>
 
-              <div className="flex-1 xl:border-l xl:border-slate-100 xl:pl-8">
-
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">
-                  Weekly Specialist Schedule
-                </h3>
-
-                <div className="space-y-3 max-h-[700px] overflow-y-auto custom-scrollbar pr-2">
-
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                   {weeklySpecialists.length === 0 ? (
-
-                    <div className="py-16 px-5 text-center border-2 border-dashed border-slate-200 rounded-2xl">
-
-                      <BriefcaseMedical className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-
-                      <p className="text-sm text-slate-500 font-medium">
-                        No weekly specialists configured.
-                      </p>
-
+                    <div className="py-14 text-center border border-dashed border-slate-200 rounded-2xl">
+                      <BriefcaseMedical className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-xs text-slate-400">No visiting specialists scheduled.</p>
                     </div>
-
                   ) : (
-
-                    weeklySpecialists.map(
-                      (specialist) => (
-
-                        <div
-                          key={specialist.id}
-                          className="bg-slate-50 border border-slate-200 rounded-xl p-4"
-                        >
-
-                          <div className="flex items-start gap-3">
-
-                            <div className="w-11 h-11 rounded-lg bg-white border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
-
+                    weeklySpecialists.map((specialist) => (
+                      <div
+                        key={specialist.id}
+                        className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/60 text-xs space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                               {specialist.photoURL ? (
-
                                 <img
-                                  src={
-                                    specialist.photoURL
-                                  }
-                                  alt={
-                                    specialist.doctorName
-                                  }
+                                  src={specialist.photoURL}
+                                  alt={specialist.doctorName}
                                   className="w-full h-full object-cover"
                                 />
-
                               ) : (
-
-                                <User className="w-5 h-5 text-slate-400" />
-
+                                <User className="w-4 h-4 text-slate-400" />
                               )}
-
                             </div>
-
-                            <div className="flex-1 min-w-0">
-
-                              <h4 className="font-bold text-slate-900 truncate">
-                                {
-                                  specialist.doctorName
-                                }
-                              </h4>
-
-                              <p className="text-[10px] uppercase tracking-widest font-bold text-emerald-600 mt-0.5">
-                                {specialist.specialty ||
-                                  'Visiting Specialist'}
+                            <div className="min-w-0">
+                              <p className="font-bold text-[#1a365d] truncate">
+                                {specialist.doctorName}
                               </p>
-
+                              <p className="text-[10px] uppercase font-bold text-[#1f9b90]">
+                                {specialist.specialty || 'Visiting Consultant'}
+                              </p>
                             </div>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleDeleteSpecialist(
-                                  specialist.id
-                                )
-                              }
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-600 shrink-0"
-                            >
-
-                              <Trash2 className="w-4 h-4" />
-
-                            </button>
-
                           </div>
 
-                          <div className="mt-4 pt-3 border-t border-slate-200 space-y-2">
-
-                            <div className="flex items-center gap-2 text-xs">
-
-                              <Star className="w-3.5 h-3.5 text-[#C19B6C]" />
-
-                              <span className="font-bold text-slate-600">
-                                {specialist.expertise}
-                              </span>
-
-                            </div>
-
-                            <div className="flex items-center gap-2 text-xs">
-
-                              <Calendar className="w-3.5 h-3.5 text-[#0EA5E9]" />
-
-                              <span className="font-bold text-slate-600">
-                                {specialist.day}
-                              </span>
-
-                            </div>
-
-                            <div className="flex items-center gap-2 text-xs">
-
-                              <Clock className="w-3.5 h-3.5 text-emerald-500" />
-
-                              <span className="font-bold text-slate-600">
-                                {specialist.startTime}{' '}
-                                -{' '}
-                                {specialist.endTime}
-                              </span>
-
-                            </div>
-
-                            {(specialist.startDate ||
-                              specialist.endDate) && (
-
-                              <p className="text-[10px] text-slate-400 font-medium pl-5">
-
-                                Effective:{' '}
-
-                                {specialist.startDate ||
-                                  'No start date'}
-
-                                {' → '}
-
-                                {specialist.endDate ||
-                                  'No end date'}
-
-                              </p>
-
-                            )}
-
-                          </div>
-
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSpecialist(specialist.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
 
-                      )
-                    )
-
+                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] font-semibold text-slate-600">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-[#1f9b90]" />
+                            <span>{specialist.day}</span>
+                          </span>
+                          <span className="flex items-center gap-1 font-mono">
+                            <Clock className="w-3.5 h-3.5 text-[#f6ac42]" />
+                            <span>{specialist.startTime} - {specialist.endTime}</span>
+                          </span>
+                        </div>
+                      </div>
+                    ))
                   )}
-
                 </div>
-
               </div>
-
             </motion.div>
-
           )}
 
         </div>
-
       </div>
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            .custom-scrollbar::-webkit-scrollbar {
-              width: 4px;
-            }
-
-            .custom-scrollbar::-webkit-scrollbar-track {
-              background: transparent;
-            }
-
-            .custom-scrollbar::-webkit-scrollbar-thumb {
-              background: #cbd5e1;
-              border-radius: 10px;
-            }
-          `,
-        }}
-      />
-
     </div>
   );
 };
